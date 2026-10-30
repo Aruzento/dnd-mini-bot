@@ -2,22 +2,27 @@
 {
   "elf": {
     "name": "Эльф",
-    "description": "Хорошая ловкость"
+    "description": "Хорошая ловкость",
+    "passive": "elf_passive"
   },
   "human": {
     "name": "Человек",
-    "description": "Хороший интеллект"
+    "description": "Хороший интеллект",
+    "passive": "human_passive"
   },
   "tiefling": {
     "name": "Тифлинг",
-    "description": "Хорошая харизма"
+    "description": "Хорошая харизма",
+    "passive": "tiefling_passive"
   },
   "half_orc": {
     "name": "Полуорк",
-    "description": "Хорошее телосложение"
+    "description": "Хорошее телосложение",
+    "passive": "half_orc_passive"
   },
   "dwarf": {
     "name": "Дварф",
-    "description": "Хорошая сила"
+    "description": "Хорошая сила",
+    "passive": "dwarf_passive"
   }
 }

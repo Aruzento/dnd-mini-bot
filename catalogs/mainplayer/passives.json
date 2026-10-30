@@ -1,0 +1,85 @@
+{
+  "elf_passive": {
+    "name": "Эльф",
+    "stats": {
+      "dexterity": 2
+    }
+  },
+  "human_passive": {
+    "name": "Человек",
+    "stats": {
+      "intelligence": 2
+    }
+  },
+  "tiefling_passive": {
+    "name": "Тифлинг",
+    "stats": {
+      "charisma": 2
+    }
+  },
+  "half_orc_passive": {
+    "name": "Полу орк",
+    "stats": {
+      "constitution": 2
+    }
+  },
+  "dwarf_passive": {
+    "name": "Дварф",
+    "stats": {
+      "strength": 2
+    }
+  },
+
+
+  "wizard_passive": {
+    "name": "Волшебник",
+    "stats": {
+      "intelligence": 1,
+      "wisdom": 1
+    }
+  },
+  "rogue_passive": {
+    "name": "Плут",
+    "stats": {
+      "dexterity": 1,
+      "charisma": 1
+    }
+  },
+  "fighter_passive": {
+    "name": "Воин",
+    "stats": {
+      "strength": 1,
+      "constitution": 1
+    }
+  },
+  "bard_passive": {
+    "name": "Бард",
+    "stats": {
+      "charisma": 1,
+      "intelligence": 1
+    }
+  },
+
+  "lvl1up": {
+    "name": "Новый персонаж",
+    "stats": {
+      "dexterity": 1,
+      "wisdom": 1,
+      "charisma": 1,
+      "strength": 1,
+      "constitution": 1,
+      "intelligence": 1
+    }
+  },
+  "lvl4up": {
+    "name": "Повышение характеристик",
+    "stats": {
+      "dexterity": 1,
+      "wisdom": 1,
+      "charisma": 1,
+      "strength": 1,
+      "constitution": 1,
+      "intelligence": 1
+    }
+  }
+}

@@ -2,18 +2,22 @@
 {
   "rogue": {
     "name": "Плут",
-    "description": ""
+    "description": "",
+    "passive": "rogue_passive"
   },
   "fighter": {
     "name": "Воин",
-    "description": ""
+    "description": "",
+    "passive": "fighter_passive"
   },
   "wizard": {
     "name": "Волшебник",
-    "description": ""
+    "description": "",
+    "passive": "wizard_passive"
   },
   "bard": {
     "name": "Бард",
-    "description": ""
+    "description": "",
+    "passive": "bard_passive"
   }
 }

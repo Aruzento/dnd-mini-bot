@@ -8,7 +8,7 @@ CATALOG_DIR = (
     / "mainplayer"
 )
 
-ALLOWED_CATALOGS = {"races", "classes"}
+ALLOWED_CATALOGS = {"races", "classes", "passives"}
 
 
 def load_character_catalog(kind: str) -> dict:
