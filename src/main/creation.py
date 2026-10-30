@@ -280,8 +280,30 @@ async def create_command(
 
     if player is None:
         raw_name = (command.args or "").strip()
-        match = re.fullmatch(r'"([^"\r\n]{1,32})"', raw_name)
-        name = match.group(1).strip() if match else ""
+
+        quote_pairs = {
+            '"': '"',
+            '«': '»',
+            '“': '”',
+        }
+
+        if raw_name and raw_name[0] in quote_pairs:
+            closing_quote = quote_pairs[raw_name[0]]
+
+            if raw_name.endswith(closing_quote) and len(raw_name) >= 2:
+                name = raw_name[1:-1].strip()
+            else:
+                name = ""
+        else:
+            name = raw_name
+
+        forbidden = '"«»“”\r\n'
+
+        if (
+            not 1 <= len(name) <= 32
+            or any(char in name for char in forbidden)
+        ):
+            name = ""
 
         if not name:
             await delete_command_message(message, bot)

@@ -51,6 +51,53 @@ class CreationHandlerTests(unittest.IsolatedAsyncioTestCase):
 
         self.bot.edit_ephemeral_message_text.assert_awaited_once()
         save.assert_called_once_with(self.message, 123)
+    async def test_create_accepts_name_formats(self):
+        cases = [
+            ('"Ренкай"', "Ренкай"),
+            ("«Ренкай»", "Ренкай"),
+            ("“Ренкай”", "Ренкай"),
+            ("Ренкай", "Ренкай"),
+            ("Ренкай Ночной", "Ренкай Ночной"),
+        ]
+
+        player = SimpleNamespace(
+            race=None,
+            class_name=None,
+        )
+
+        for raw_name, expected_name in cases:
+            with self.subTest(raw_name=raw_name):
+                self.bot.send_message.reset_mock()
+
+                command = SimpleNamespace(args=raw_name)
+
+                with patch(
+                    "src.main.creation.get_player",
+                    return_value=None,
+                ):
+                    with patch(
+                        "src.main.creation.create_player",
+                        return_value=player,
+                    ) as create:
+                        with patch(
+                            "src.main.creation.delete_old_prompt",
+                            new_callable=AsyncMock,
+                        ):
+                            await create_command(
+                                self.message,
+                                self.bot,
+                                command,
+                            )
+
+                create.assert_called_once_with(
+                    123,
+                    expected_name,
+                )
+
+                self.assertIn(
+                    "Выбор расы",
+                    self.bot.send_message.await_args.kwargs["text"],
+                )
 
     async def test_race_opens_class_menu(self):
         callback = self.callback("mini:race:elf")
@@ -126,6 +173,10 @@ class CreationHandlerTests(unittest.IsolatedAsyncioTestCase):
             chat_id=-1001, message_id=99
         )
         self.bot.send_message.assert_awaited_once()
+        self.assertIn(
+            "Выбор расы",
+            self.bot.send_message.await_args.kwargs["text"],
+        )
         cleanup.assert_awaited_once()
 
     async def test_saved_ephemeral_prompt_is_deleted(self):
