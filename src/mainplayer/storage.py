@@ -136,6 +136,14 @@ def migrate_player_usernames(db_path: Path = DB_PATH):
         """)
 
 
+def migrate_all(db_path: Path = DB_PATH):
+    """Последовательно применяет все известные миграции."""
+
+    migrate_player_stats(db_path)
+    migrate_player_hp(db_path)
+    migrate_player_usernames(db_path)
+
+
 def get_player(
     player_id: int,
     db_path: Path = DB_PATH,

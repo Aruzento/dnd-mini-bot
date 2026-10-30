@@ -13,6 +13,7 @@ from src.mainplayer.storage import (
     migrate_player_stats,
     remove_passive,
     set_base_stat,
+    migrate_all,
 )
 from src.mainplayer.attributes import (
     calculate_defense,
@@ -106,10 +107,21 @@ class AttributesTests(unittest.TestCase):
                 VALUES (123, 'Ренкай', 'elf', 4)
             """)
 
-        migrate_player_stats(self.path)
-        migrate_player_stats(self.path)
-        migrate_player_hp(self.path)
-        migrate_player_hp(self.path)
+        migrate_all(self.path)
+        migrate_all(self.path)
+
+        with sqlite3.connect(self.path) as conn:
+            columns = {
+                row[1]
+                for row in conn.execute(
+                    "PRAGMA table_info(players)"
+                )
+            }
+
+        self.assertTrue(
+            {"stats", "passives", "hp_now", "username"}
+            <= columns
+        )
 
         player = get_player(123, self.path)
 
