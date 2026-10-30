@@ -15,7 +15,6 @@ from src.main.home import (
     player_menu,
 )
 
-
 class MenuCatalogTests(unittest.TestCase):
     def test_all_menus_load(self):
         text, buttons = load_menu("launcher")
@@ -50,7 +49,6 @@ class MenuCatalogTests(unittest.TestCase):
             with patch("src.main.menus.MENU_DIR", Path(temp)):
                 with self.assertRaises(json.JSONDecodeError):
                     load_menu("main")
-
     
     def test_player_selection(self):
         with patch("src.main.home.get_player", return_value=None):
@@ -76,8 +74,6 @@ class MenuCatalogTests(unittest.TestCase):
         )
         with patch("src.main.home.get_player", return_value=complete):
             self.assertEqual(player_menu(123), "main")
-
-
 
 class MenuHandlersTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
@@ -139,7 +135,6 @@ class MenuHandlersTests(unittest.IsolatedAsyncioTestCase):
         self.bot.edit_message_text.assert_not_awaited()
         callback.answer.assert_awaited_once()
 
-    
     async def test_play_opens_new_menu_and_deletes_old(self):
         message = SimpleNamespace(
             chat=self.chat,
@@ -191,7 +186,6 @@ class MenuHandlersTests(unittest.IsolatedAsyncioTestCase):
 
         # Старое меню не редактировалось
         self.bot.edit_ephemeral_message_text.assert_not_awaited()
-
 
     async def test_another_user_cannot_control_private_menu(self):
         message = SimpleNamespace(

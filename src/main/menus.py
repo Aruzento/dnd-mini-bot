@@ -25,7 +25,6 @@ def load_menu(
     if not isinstance(text, str) or not text.strip() or not isinstance(buttons, list):
         raise ValueError(f"Invalid JSON menu: {name}")
 
-    
     # Подставляем характеристики персонажа
     if name == "main" and player is not None:
         races = load_character_catalog("races")
