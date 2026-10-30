@@ -1,0 +1,24 @@
+
+{
+  "arza_zenta": {
+    "name": "Арза Зента",
+    "type": "aoe",
+    "stats": {
+      "intelligence": 3,
+      "charisma": 3,
+      "constitution": 1,
+      "wisdom": 2
+    },
+    "passives": [
+      "mischief",
+      "fire_projectile"
+    ],
+    "village": {
+      "productivity_bonus": 0.15
+    },
+    "obtain": [
+      "gacha",
+      "alchemy"
+    ]
+  }
+}

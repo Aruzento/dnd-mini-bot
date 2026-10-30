@@ -1,0 +1,30 @@
+
+{
+  "mischief": {
+    "name": "Шалость",
+    "description": "Если враг один, по нему может пройти две атаки за удар.",
+    "trigger": "on_attack",
+    "condition": {
+      "enemy_count": 1
+    },
+    "chance": null,
+    "effect": {
+      "type": "extra_attack",
+      "count": 1
+    }
+  },
+  "fire_projectile": {
+    "name": "Огненный снаряд",
+    "description": "Вместо обычной атаки с шансом 10% использует заклинание, наносящее 2d4+2 урона.",
+    "trigger": "on_attack",
+    "chance": 0.1,
+    "effect": {
+      "type": "replace_attack_with_spell",
+      "damage": {
+        "sides": 4,
+        "count": 2,
+        "modifier": 2
+      }
+    }
+  }
+}
