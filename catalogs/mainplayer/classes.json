@@ -3,21 +3,25 @@
   "rogue": {
     "name": "Плут",
     "description": "",
-    "passive": "rogue_passive"
+    "passive": "rogue_passive",
+    "hp_modifier": 8
   },
   "fighter": {
     "name": "Воин",
     "description": "",
-    "passive": "fighter_passive"
+    "passive": "fighter_passive",
+    "hp_modifier": 10
   },
   "wizard": {
     "name": "Волшебник",
     "description": "",
-    "passive": "wizard_passive"
+    "passive": "wizard_passive",
+    "hp_modifier": 6
   },
   "bard": {
     "name": "Бард",
     "description": "",
-    "passive": "bard_passive"
+    "passive": "bard_passive",
+    "hp_modifier": 8
   }
 }

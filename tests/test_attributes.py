@@ -5,6 +5,7 @@ from pathlib import Path
 
 from src.mainplayer.model import MainPlayer
 from src.mainplayer.storage import (
+    migrate_player_hp,
     add_passive,
     create_player,
     get_player,
@@ -12,6 +13,10 @@ from src.mainplayer.storage import (
     migrate_player_stats,
     remove_passive,
     set_base_stat,
+)
+from src.mainplayer.attributes import (
+    calculate_defense,
+    calculate_max_hp,
 )
 
 
@@ -103,6 +108,8 @@ class AttributesTests(unittest.TestCase):
 
         migrate_player_stats(self.path)
         migrate_player_stats(self.path)
+        migrate_player_hp(self.path)
+        migrate_player_hp(self.path)
 
         player = get_player(123, self.path)
 
@@ -110,3 +117,64 @@ class AttributesTests(unittest.TestCase):
         self.assertEqual(player.race, "elf")
         self.assertEqual(player.stats["strength"], 0)
         self.assertEqual(player.passives, [])
+        self.assertIsNone(player.hp_now)
+
+    
+    def test_hp_and_defense_formulas(self):
+        self.assertEqual(
+            calculate_max_hp(4, 2, 5),
+            13,
+        )
+
+        self.assertEqual(
+            calculate_defense(3, 2),
+            15,
+        )
+
+        self.assertEqual(
+            calculate_defense(3),
+            13,
+        )
+
+    def test_hp_and_defense_use_passives(self):
+        player = MainPlayer(
+            id=123,
+            name="Ренкай",
+            level=4,
+            passives=[
+                "lvl1up",
+                "elf_passive",
+                "fighter_passive",
+            ],
+        )
+
+        self.assertEqual(
+            player.effective_stats["constitution"],
+            2,
+        )
+        self.assertEqual(
+            player.effective_stats["dexterity"],
+            3,
+        )
+
+        self.assertEqual(player.max_hp(5), 13)
+        self.assertEqual(player.defense(2), 15)
+
+        # Удаление пассивки изменяет итоговые значения.
+        player.passives.remove("fighter_passive")
+
+        self.assertEqual(player.max_hp(5), 9)
+        self.assertEqual(player.defense(2), 15)
+
+        # Исходные характеристики не изменяются.
+        self.assertEqual(player.stats["constitution"], 0)
+
+    def test_invalid_combat_parameters(self):
+        with self.assertRaises(ValueError):
+            calculate_max_hp(0, 2, 5)
+
+        with self.assertRaises(ValueError):
+            calculate_max_hp(4, 2, True)
+
+        with self.assertRaises(ValueError):
+            calculate_defense(3, True)

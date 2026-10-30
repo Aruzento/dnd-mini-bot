@@ -49,6 +49,8 @@ class MenuCatalogTests(unittest.TestCase):
             level=1,
             race="elf",
             class_name="fighter",
+            current_hp=12,
+            hp_max=12,
         )
 
         _, keyboard = load_menu("profile", player=player)
@@ -201,6 +203,8 @@ class MenuHandlersTests(unittest.IsolatedAsyncioTestCase):
             level=1,
             race="elf",
             class_name="fighter",
+            hp_max=12,
+            current_hp=12,
         )
 
         message = SimpleNamespace(
@@ -440,6 +444,8 @@ class MenuHandlersTests(unittest.IsolatedAsyncioTestCase):
             level=1,
             race="elf",
             class_name="fighter",
+            hp_max=12,
+            current_hp=12,
         )
 
         text, keyboard = load_menu("profile", player=player)
@@ -448,6 +454,7 @@ class MenuHandlersTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("Уровень: 1", text)
         self.assertIn("Раса: Эльф", text)
         self.assertIn("Класс: Воин", text)
+        self.assertIn("HP: 12 / 12", text)
 
         self.assertEqual(
             keyboard.inline_keyboard[0][0].callback_data,

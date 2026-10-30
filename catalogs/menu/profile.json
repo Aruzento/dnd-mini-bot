@@ -1,6 +1,6 @@
 
 {
-  "text": "Профиль героя {name}\n\nУровень: {level}\nРаса: {race}\t|\tКласс: {class_name}",
+  "text": "Профиль героя {name}\n\nУровень: {level}\n♥ HP: {hp_now} / {hp_max}\nРаса: {race}\t|\tКласс: {class_name}",
   "columns": 2,
   "buttons": [
     {

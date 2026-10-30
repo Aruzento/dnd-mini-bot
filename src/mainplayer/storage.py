@@ -21,6 +21,26 @@ def _connect(db_path: Path):
     return conn
 
 
+def _read_player(conn, player_id: int) -> MainPlayer | None:
+    """Читает героя через существующее соединение."""
+
+    row = conn.execute("""
+        SELECT id, name, race, class_name, level,
+               stats, passives, hp_now
+        FROM players
+        WHERE id = ?
+    """, (player_id,)).fetchone()
+
+    if row is None:
+        return None
+
+    data = dict(row)
+    data["stats"] = json.loads(data["stats"])
+    data["passives"] = json.loads(data["passives"])
+
+    return MainPlayer(**data)
+
+
 def init_db(db_path: Path = DB_PATH):
     """Создаёт новую таблицу. Старую структуру не меняет."""
 
@@ -35,7 +55,8 @@ def init_db(db_path: Path = DB_PATH):
                 level INTEGER NOT NULL DEFAULT 1
                     CHECK (level >= 1),
                 stats TEXT NOT NULL DEFAULT '{DEFAULT_STATS_JSON}',
-                passives TEXT NOT NULL DEFAULT '[]'
+                passives TEXT NOT NULL DEFAULT '[]',
+                hp_now INTEGER CHECK (hp_now >= 0)
             )
         """)
 
@@ -65,26 +86,36 @@ def migrate_player_stats(db_path: Path = DB_PATH):
                 "passives TEXT NOT NULL DEFAULT '[]'"
             )
 
+
+def migrate_player_hp(db_path: Path = DB_PATH):
+    """Добавляет текущее HP без изменения существующих героев."""
+
+    with closing(_connect(db_path)) as conn, conn:
+        conn.execute("BEGIN IMMEDIATE")
+
+        columns = {
+            row["name"]
+            for row in conn.execute("PRAGMA table_info(players)")
+        }
+
+        if not columns:
+            raise ValueError("Таблица players не найдена")
+
+        if "hp_now" not in columns:
+            conn.execute("""
+                ALTER TABLE players
+                ADD COLUMN hp_now INTEGER CHECK (hp_now >= 0)
+            """)
+
+
+
 def get_player(
     player_id: int,
     db_path: Path = DB_PATH,
 ) -> MainPlayer | None:
-
     with closing(_connect(db_path)) as conn:
-        row = conn.execute("""
-            SELECT id, name, race, class_name, level, stats, passives
-            FROM players
-            WHERE id = ?
-        """, (player_id,)).fetchone()
+        return _read_player(conn, player_id)
 
-    if row is None:
-        return None
-
-    data = dict(row)
-    data["stats"] = json.loads(data["stats"])
-    data["passives"] = json.loads(data["passives"])
-
-    return MainPlayer(**data)
 
 
 def create_player(
@@ -383,6 +414,44 @@ def remove_passive(
         return True
 
     return _update_player_json(player_id, "passives", change, db_path)
+
+
+def set_hp_now(
+    player_id: int,
+    hp_now: int,
+    db_path: Path = DB_PATH,
+) -> bool:
+    """Устанавливает текущее HP героя."""
+
+    if type(hp_now) is not int or hp_now < 0:
+        raise ValueError("Некорректное значение HP")
+
+    with closing(_connect(db_path)) as conn, conn:
+        conn.execute("BEGIN IMMEDIATE")
+
+        player = _read_player(conn, player_id)
+
+        if player is None:
+            raise ValueError("Игрок не найден")
+
+        maximum = player.hp_max
+
+        if maximum is None:
+            raise ValueError("Герой ещё не выбрал класс")
+
+        if hp_now > maximum:
+            raise ValueError("HP не может превышать максимум")
+
+        if player.hp_now == hp_now:
+            return False
+
+        conn.execute(
+            "UPDATE players SET hp_now = ? WHERE id = ?",
+            (hp_now, player_id),
+        )
+
+    return True
+
 
 if __name__ == "__main__":
     init_db()

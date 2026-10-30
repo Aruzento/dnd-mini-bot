@@ -9,11 +9,90 @@ from src.mainplayer.storage import (
     create_player,
     get_player,
     init_db,
+    set_hp_now,
     set_race_and_class,
 )
 
 
 class MainPlayerTests(unittest.TestCase):
+
+    
+    def test_class_hp_modifiers(self):
+        modifiers = {
+            "fighter": 10,
+            "rogue": 8,
+            "wizard": 6,
+            "bard": 8,
+        }
+
+        for class_id, modifier in modifiers.items():
+            with self.subTest(class_id=class_id):
+                player = MainPlayer(
+                    id=123,
+                    name="Герой",
+                    class_name=class_id,
+                    level=4,
+                    passives=["lvl1up"],
+                )
+
+                # lvl1up даёт +1 к телосложению.
+                self.assertEqual(
+                    player.hp_max,
+                    modifier + 4,
+                )
+
+    def test_hp_persistence(self):
+        create_player(123, "Ренкай", self.db_path)
+
+        player = set_race_and_class(
+            123, "elf", "fighter", self.db_path
+        )
+
+        self.assertEqual(player.hp_max, 12)
+        self.assertIsNone(player.hp_now)
+        self.assertEqual(player.current_hp, 12)
+
+        # Герой получил 5 единиц урона.
+        self.assertTrue(
+            set_hp_now(123, 7, self.db_path)
+        )
+
+        player = get_player(123, self.db_path)
+
+        self.assertEqual(player.hp_now, 7)
+        self.assertEqual(player.current_hp, 7)
+        self.assertEqual(player.hp_max, 12)
+
+        # Нулевое HP тоже должно сохраняться.
+        self.assertTrue(
+            set_hp_now(123, 0, self.db_path)
+        )
+        self.assertEqual(
+            get_player(123, self.db_path).current_hp,
+            0,
+        )
+
+        self.assertFalse(
+            set_hp_now(123, 0, self.db_path)
+        )
+
+    def test_hp_validation(self):
+        create_player(123, "Ренкай", self.db_path)
+
+        with self.assertRaises(ValueError):
+            set_hp_now(123, 1, self.db_path)
+
+        set_race_and_class(
+            123, "elf", "fighter", self.db_path
+        )
+
+        for invalid in (-1, True, 13):
+            with self.subTest(invalid=invalid):
+                with self.assertRaises(ValueError):
+                    set_hp_now(123, invalid, self.db_path)
+
+        with self.assertRaises(ValueError):
+            set_hp_now(999, 1, self.db_path)
 
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()

@@ -58,12 +58,13 @@ def load_menu(
     if name == "profile" and player is not None:
         races = load_character_catalog("races")
         classes = load_character_catalog("classes")
-
         text = text.format(
             name=player.name,
             level=player.level,
             race=races[player.race]["name"],
             class_name=classes[player.class_name]["name"],
+            hp_now=player.current_hp,
+            hp_max=player.hp_max,
         )
 
     columns = data.get("columns", 1)
