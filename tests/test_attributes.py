@@ -28,29 +28,37 @@ class AttributesTests(unittest.TestCase):
     def test_new_hero(self):
         player = create_player(123, "Ренкай", self.path)
 
-        self.assertEqual(player, MainPlayer(id=123, name="Ренкай"))
-        self.assertEqual(len(player.stats), 6)
-        self.assertEqual(player.passives, [])
+        self.assertEqual(
+            player,
+            MainPlayer(
+                id=123,
+                name="Ренкай",
+                passives=["lvl1up"],
+            ),
+        )
+
+        self.assertTrue(all(v == 0 for v in player.stats.values()))
+        self.assertTrue(all(v == 1 for v in player.effective_stats.values()))
 
     def test_passives_stack_remove_and_persist(self):
         create_player(123, "Ренкай", self.path)
 
-        for code in ("elf", "mage", "lvl4up"):
+        for code in ("elf_passive", "wizard_passive", "lvl4up"):
             self.assertTrue(add_passive(123, code, self.path))
 
-        self.assertFalse(add_passive(123, "elf", self.path))
+        self.assertFalse(add_passive(123, "elf_passive", self.path))
 
         player = get_player(123, self.path)
 
-        self.assertEqual(player.stats["dexterity"], 10)
-        self.assertEqual(player.effective_stats["dexterity"], 12)
-        self.assertEqual(player.effective_stats["intelligence"], 14)
+        self.assertEqual(player.stats["dexterity"], 0)
+        self.assertEqual(player.effective_stats["dexterity"], 4)
+        self.assertEqual(player.effective_stats["intelligence"], 3)
 
-        self.assertTrue(remove_passive(123, "elf", self.path))
-        self.assertFalse(remove_passive(123, "elf", self.path))
+        self.assertTrue(remove_passive(123, "elf_passive", self.path))
+        self.assertFalse(remove_passive(123, "elf_passive", self.path))
 
         player = get_player(123, self.path)
-        self.assertEqual(player.effective_stats["dexterity"], 11)
+        self.assertEqual(player.effective_stats["dexterity"], 2)
 
     def test_change_base_does_not_change_bonuses(self):
         create_player(123, "Ренкай", self.path)
@@ -58,12 +66,12 @@ class AttributesTests(unittest.TestCase):
         self.assertTrue(
             set_base_stat(123, "dexterity", 14, self.path)
         )
-        self.assertTrue(add_passive(123, "elf", self.path))
+        self.assertTrue(add_passive(123, "elf_passive", self.path))
 
         player = get_player(123, self.path)
 
         self.assertEqual(player.stats["dexterity"], 14)
-        self.assertEqual(player.effective_stats["dexterity"], 15)
+        self.assertEqual(player.effective_stats["dexterity"], 17)
 
     def test_unknown_passive(self):
         create_player(123, "Ренкай", self.path)
@@ -71,7 +79,10 @@ class AttributesTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             add_passive(123, "unknown", self.path)
 
-        self.assertEqual(get_player(123, self.path).passives, [])
+        self.assertEqual(
+            get_player(123, self.path).passives,
+            ["lvl1up"],
+        )
 
     def test_legacy_migration(self):
         with sqlite3.connect(self.path) as conn:
@@ -97,5 +108,5 @@ class AttributesTests(unittest.TestCase):
 
         self.assertEqual(player.level, 4)
         self.assertEqual(player.race, "elf")
-        self.assertEqual(player.stats["strength"], 10)
+        self.assertEqual(player.stats["strength"], 0)
         self.assertEqual(player.passives, [])

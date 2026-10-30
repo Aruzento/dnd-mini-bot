@@ -13,7 +13,7 @@ ABILITIES = (
 
 
 def default_stats() -> dict[str, int]:
-    return {ability: 10 for ability in ABILITIES}
+    return {ability: 0 for ability in ABILITIES}
 
 
 def calculate_stats(

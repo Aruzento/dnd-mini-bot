@@ -90,37 +90,183 @@ def get_player(
 def create_player(
     player_id: int,
     name: str,
-    db_path: Path = DB_PATH
+    db_path: Path = DB_PATH,
 ) -> MainPlayer:
-    """Создаёт нового игрока."""
+    """Создаёт игрока с нулевыми базовыми характеристиками."""
+
+    from .catalog import load_character_catalog
+
+    if "lvl1up" not in load_character_catalog("passives"):
+        raise ValueError("Пассивка lvl1up не найдена")
+
     with closing(_connect(db_path)) as conn, conn:
         conn.execute(
-            "INSERT INTO players (id, name) VALUES (?, ?)",
-            (player_id, name)
+            """
+            INSERT INTO players (id, name, stats, passives)
+            VALUES (?, ?, ?, ?)
+            """,
+            (
+                player_id,
+                name,
+                DEFAULT_STATS_JSON,
+                json.dumps(["lvl1up"]),
+            ),
         )
 
     return get_player(player_id, db_path)
 
+def _choice_passive(kind: str, code: str) -> str:
+    """Получает пассивку из каталога расы или класса."""
+
+    from .catalog import load_character_catalog
+
+    if kind not in ("races", "classes") or not isinstance(code, str):
+        raise ValueError("Некорректный выбор")
+
+    entity = load_character_catalog(kind).get(code)
+
+    if entity is None:
+        raise ValueError(f"Неизвестная сущность: {kind}/{code}")
+
+    passive_id = entity.get("passive")
+
+    if (
+        not isinstance(passive_id, str)
+        or passive_id not in load_character_catalog("passives")
+    ):
+        raise ValueError(
+            f"Неизвестная пассивка для {kind}/{code}"
+        )
+
+    return passive_id
+
+
+def _set_choice_with_passive(
+    player_id: int,
+    code: str,
+    kind: str,
+    db_path: Path,
+) -> bool:
+    """Сохраняет выбор и пассивку одной транзакцией."""
+
+    rules = {
+        "races": (
+            "race",
+            "race IS NULL AND class_name IS NULL",
+        ),
+        "classes": (
+            "class_name",
+            "race IS NOT NULL AND class_name IS NULL",
+        ),
+    }
+
+    if kind not in rules:
+        raise ValueError("Неизвестный тип выбора")
+
+    passive_id = _choice_passive(kind, code)
+    column, condition = rules[kind]
+
+    with closing(_connect(db_path)) as conn, conn:
+        conn.execute("BEGIN IMMEDIATE")
+
+        row = conn.execute(
+            f"""
+            SELECT passives
+            FROM players
+            WHERE id = ? AND {condition}
+            """,
+            (player_id,),
+        ).fetchone()
+
+        if row is None:
+            return False
+
+        passives = json.loads(row["passives"])
+
+        if passive_id not in passives:
+            passives.append(passive_id)
+
+        conn.execute(
+            f"""
+            UPDATE players
+            SET {column} = ?, passives = ?
+            WHERE id = ? AND {condition}
+            """,
+            (
+                code,
+                json.dumps(passives, ensure_ascii=False),
+                player_id,
+            ),
+        )
+
+    return True
 
 def set_race_and_class(
     player_id: int,
     race: str,
     class_name: str,
-    db_path: Path = DB_PATH
+    db_path: Path = DB_PATH,
 ) -> MainPlayer:
-    """Сохраняет выбор расы и класса."""
+    """Назначает расу, класс и соответствующие пассивки."""
+
+    from .catalog import load_character_catalog
+
+    races = load_character_catalog("races")
+    classes = load_character_catalog("classes")
+    passives_catalog = load_character_catalog("passives")
+
+    if race not in races:
+        raise ValueError("Неизвестная раса")
+
+    if class_name not in classes:
+        raise ValueError("Неизвестный класс")
+
+    race_passive = races[race]["passive"]
+    class_passive = classes[class_name]["passive"]
+
+    if (
+        race_passive not in passives_catalog
+        or class_passive not in passives_catalog
+    ):
+        raise ValueError("Неизвестная пассивка")
+
     with closing(_connect(db_path)) as conn, conn:
-        result = conn.execute(
+        conn.execute("BEGIN IMMEDIATE")
+
+        row = conn.execute(
             """
-            UPDATE players
-            SET race = ?, class_name = ?
+            SELECT race, class_name, passives
+            FROM players
             WHERE id = ?
             """,
-            (race, class_name, player_id)
-        )
+            (player_id,),
+        ).fetchone()
 
-        if result.rowcount != 1:
+        if row is None:
             raise ValueError("Игрок не найден")
+
+        if row["race"] is not None or row["class_name"] is not None:
+            raise ValueError("Раса или класс уже выбраны")
+
+        passives = json.loads(row["passives"])
+
+        for passive_id in (race_passive, class_passive):
+            if passive_id not in passives:
+                passives.append(passive_id)
+
+        conn.execute(
+            """
+            UPDATE players
+            SET race = ?, class_name = ?, passives = ?
+            WHERE id = ?
+            """,
+            (
+                race,
+                class_name,
+                json.dumps(passives, ensure_ascii=False),
+                player_id,
+            ),
+        )
 
     return get_player(player_id, db_path)
 
@@ -128,41 +274,26 @@ def set_race_and_class(
 def set_race(
     player_id: int,
     race: str,
-    db_path: Path = DB_PATH
+    db_path: Path = DB_PATH,
 ) -> bool:
-    """Сохраняет расу один раз, во время регистрации."""
-    with closing(_connect(db_path)) as conn, conn:
-        result = conn.execute(
-            """
-            UPDATE players
-            SET race = ?
-            WHERE id = ?
-              AND race IS NULL
-              AND class_name IS NULL
-            """,
-            (race, player_id)
-        )
-        return result.rowcount == 1
+    """Назначает расу и её пассивку."""
+
+    return _set_choice_with_passive(
+        player_id, race, "races", db_path
+    )
 
 
 def set_class(
     player_id: int,
     class_name: str,
-    db_path: Path = DB_PATH
+    db_path: Path = DB_PATH,
 ) -> bool:
-    """Сохраняет класс после выбора расы."""
-    with closing(_connect(db_path)) as conn, conn:
-        result = conn.execute(
-            """
-            UPDATE players
-            SET class_name = ?
-            WHERE id = ?
-              AND race IS NOT NULL
-              AND class_name IS NULL
-            """,
-            (class_name, player_id)
-        )
-        return result.rowcount == 1
+    """Назначает класс и его пассивку."""
+
+    return _set_choice_with_passive(
+        player_id, class_name, "classes", db_path
+    )
+
 
 def _update_player_json(player_id, column, mutate, db_path):
     """Атомарно изменяет JSON-поле героя."""

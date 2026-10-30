@@ -28,7 +28,11 @@ class MainPlayerTests(unittest.TestCase):
 
         self.assertEqual(
             player,
-            MainPlayer(id=123, name="Ренкай")
+            MainPlayer(
+                id=123,
+                name="Ренкай",
+                passives=["lvl1up"],
+            )
         )
         self.assertEqual(get_player(123, self.db_path), player)
         self.assertIsNone(get_player(999, self.db_path))
@@ -37,12 +41,17 @@ class MainPlayerTests(unittest.TestCase):
         create_player(123, "Ренкай", self.db_path)
 
         player = set_race_and_class(
-            123, "человек", "воин", self.db_path
+            123, "human", "fighter", self.db_path
         )
 
-        self.assertEqual(player.race, "человек")
-        self.assertEqual(player.class_name, "воин")
+        self.assertEqual(player.race, "human")
+        self.assertEqual(player.class_name, "fighter")
         self.assertEqual(player.level, 1)
+
+        self.assertEqual(
+            player.passives,
+            ["lvl1up", "human_passive", "fighter_passive"],
+        )
 
     def test_repeated_creation_does_not_erase(self):
         create_player(123, "Ренкай", self.db_path)

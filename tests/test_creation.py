@@ -44,6 +44,10 @@ class CreationTests(unittest.TestCase):
         self.assertTrue(set_race(123, "elf", self.db))
 
         player = get_player(123, self.db)
+        self.assertEqual(
+            player.passives,
+            ["lvl1up", "elf_passive"],
+        )
         self.assertEqual(player.race, "elf")
         self.assertEqual(next_menu(player), "class")
 
@@ -53,6 +57,10 @@ class CreationTests(unittest.TestCase):
         self.assertTrue(set_class(123, "fighter", self.db))
 
         player = get_player(123, self.db)
+        self.assertEqual(
+            player.passives,
+            ["lvl1up", "elf_passive", "fighter_passive"],
+        )
         self.assertEqual(player.class_name, "fighter")
         self.assertEqual(next_menu(player), "main")
 
@@ -72,8 +80,14 @@ class CreationTests(unittest.TestCase):
         self.assertFalse(set_class(123, "wizard", self.db))
 
         player = get_player(123, self.db)
+
         self.assertEqual(player.race, "elf")
         self.assertEqual(player.class_name, "fighter")
+
+        self.assertEqual(
+            player.passives,
+            ["lvl1up", "elf_passive", "fighter_passive"],
+        )
 
     def test_duplicate_creation_preserves_player(self):
         create_player(123, "Ренкай", self.db)
