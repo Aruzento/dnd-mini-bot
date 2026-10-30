@@ -1,0 +1,9 @@
+{
+  "text": "D&D Mini 2.0\nНажми «Играть», чтобы открыть личное меню.",
+  "image": {
+    "file_id": null
+  },
+  "buttons": [
+    {"text": "Играть", "callback_data": "mini:play"}
+  ]
+}

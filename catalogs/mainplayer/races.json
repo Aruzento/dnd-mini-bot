@@ -1,0 +1,23 @@
+
+{
+  "elf": {
+    "name": "Эльф",
+    "description": "Хорошая ловкость"
+  },
+  "human": {
+    "name": "Человек",
+    "description": "Хороший интеллект"
+  },
+  "tiefling": {
+    "name": "Тифлинг",
+    "description": "Хорошая харизма"
+  },
+  "half_orc": {
+    "name": "Полуорк",
+    "description": "Хорошее телосложение"
+  },
+  "dwarf": {
+    "name": "Дварф",
+    "description": "Хорошая сила"
+  }
+}

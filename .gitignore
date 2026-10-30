@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+
+# Секреты
+.env
+.env.*
+bot.env
+*.key
+*.pem
+
+# Базы данных
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+
+# Резервные копии
+*.bak
+*.backup
+*.before-*
+*.zip
+
+# Временные файлы
+*.log
+*.tmp
+comm.sh
+
+# Редакторы
+.vscode/
+.idea/
+.DS_Store

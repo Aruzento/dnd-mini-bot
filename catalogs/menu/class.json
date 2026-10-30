@@ -1,0 +1,12 @@
+
+{
+  "text": "Выбор класса\n\nВыберите класс:",
+  "image": {
+    "file_id": null
+  },
+  "options_from": {
+    "catalog": "classes",
+    "callback_prefix": "mini:class:"
+  },
+  "buttons": []
+}

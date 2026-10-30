@@ -1,0 +1,13 @@
+
+{
+  "text": "Создание персонажа\nУ тебя пока нет персонажа.",
+  "image": {
+    "file_id": null
+  },
+  "buttons": [
+    {
+      "text": "Создать",
+      "callback_data": "mini:create"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+
+{
+  "text": "Выбор расы\n\n{descriptions}\n\nВыберите расу:",
+  "image": {
+    "file_id": null
+  },
+  "options_from": {
+    "catalog": "races",
+    "callback_prefix": "mini:race:"
+  },
+  "buttons": []
+}

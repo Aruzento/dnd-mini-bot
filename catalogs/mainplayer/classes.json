@@ -1,0 +1,19 @@
+
+{
+  "rogue": {
+    "name": "Плут",
+    "description": ""
+  },
+  "fighter": {
+    "name": "Воин",
+    "description": ""
+  },
+  "wizard": {
+    "name": "Волшебник",
+    "description": ""
+  },
+  "bard": {
+    "name": "Бард",
+    "description": ""
+  }
+}
