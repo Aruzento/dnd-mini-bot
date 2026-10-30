@@ -1,0 +1,7 @@
+
+{
+  "text": "Профиль героя {name}\n\nУровень: {level}\nРаса: {race}\t|\tКласс: {class_name}",
+  "buttons": [
+    {"text": "◀ Главное меню", "callback_data": "mini:main"}
+  ]
+}

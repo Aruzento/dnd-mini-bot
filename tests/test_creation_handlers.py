@@ -32,10 +32,54 @@ class CreationHandlerTests(unittest.IsolatedAsyncioTestCase):
             edit_ephemeral_message_text=AsyncMock(),
             delete_message=AsyncMock(),
             delete_ephemeral_message=AsyncMock(),
+            send_photo=AsyncMock(),
         )
+
+    
+    async def test_class_opens_photo_main_menu(self):
+        callback = self.callback("mini:class:fighter")
+
+        before = SimpleNamespace(
+            race="elf",
+            class_name=None,
+        )
+        after = SimpleNamespace(
+            name="Ренкай",
+            level=1,
+            race="elf",
+            class_name="fighter",
+        )
+
+        def image_for_menu(name):
+            return "TEST_PHOTO_ID" if name == "main" else None
+
+        with patch(
+            "src.main.creation.get_player",
+            side_effect=[before, after],
+        ):
+            with patch("src.main.creation.set_class"):
+                with patch(
+                    "src.main.creation.load_menu_image",
+                    side_effect=image_for_menu,
+                ):
+                    await choose_class(callback, self.bot)
+
+        self.bot.send_photo.assert_awaited_once()
+
+        args = self.bot.send_photo.await_args.kwargs
+        self.assertEqual(args["photo"], "TEST_PHOTO_ID")
+        self.assertEqual(
+            args["ephemeral_message_parameters"].receiver_user_id,
+            123,
+        )
+
+        self.bot.delete_ephemeral_message.assert_awaited_once()
+        self.bot.edit_ephemeral_message_text.assert_not_awaited()
+
 
     def callback(self, data):
         return SimpleNamespace(
+            id="test-callback-id",
             data=data,
             from_user=self.user,
             message=self.message,
@@ -129,11 +173,15 @@ class CreationHandlerTests(unittest.IsolatedAsyncioTestCase):
         )
 
         with patch(
-            "src.main.creation.get_player",
-            side_effect=[before, after],
+            "src.main.creation.load_menu_image",
+            return_value=None,
         ):
-            with patch("src.main.creation.set_class") as save:
-                await choose_class(callback, self.bot)
+            with patch(
+                "src.main.creation.get_player",
+                side_effect=[before, after],
+            ):
+                with patch("src.main.creation.set_class") as save:
+                    await choose_class(callback, self.bot)
 
         save.assert_called_once_with(123, "fighter")
         self.bot.edit_ephemeral_message_text.assert_awaited_once()

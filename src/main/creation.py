@@ -24,7 +24,7 @@ from src.mainplayer.storage import (
     set_class,
     set_race,
 )
-from .menus import load_menu
+from .menus import load_menu, load_menu_image
 from src.mainplayer.catalog import load_character_catalog
 
 router = Router(name="mini_creation")
@@ -118,15 +118,125 @@ def is_personal_callback(callback):
     )
 
 
+async def send_menu(
+    bot,
+    menu_name,
+    chat_id,
+    player=None,
+    message_thread_id=None,
+    ephemeral_message_parameters=None,
+):
+    """Отправляет текстовое меню или фото с подписью."""
+    text, keyboard = load_menu(menu_name, player=player)
+    file_id = load_menu_image(menu_name)
+
+    kwargs = {
+        "chat_id": chat_id,
+        "reply_markup": keyboard,
+    }
+
+    if message_thread_id is not None:
+        kwargs["message_thread_id"] = message_thread_id
+
+    if ephemeral_message_parameters is not None:
+        kwargs["ephemeral_message_parameters"] = (
+            ephemeral_message_parameters
+        )
+
+    if file_id:
+        if len(text) > 1024:
+            raise ValueError("Подпись изображения слишком длинная")
+
+        return await bot.send_photo(
+            photo=file_id,
+            caption=text,
+            **kwargs,
+        )
+
+    return await bot.send_message(
+        text=text,
+        **kwargs,
+    )
+
+
+
 async def edit_private_menu(callback, bot, menu_name, player=None):
-    """Редактирует личное меню вместо отправки нового."""
+    """Обновляет личное меню с учётом типа сообщения."""
     if not is_personal_callback(callback):
         raise ValueError("Это не личное меню игрока")
 
     message = callback.message
     text, keyboard = load_menu(menu_name, player=player)
 
-    if message.chat.type == "private":
+    target_has_photo = bool(load_menu_image(menu_name))
+    current_has_photo = bool(getattr(message, "photo", None))
+
+    # При смене типа сообщения отправляем новое личное меню.
+    if target_has_photo != current_has_photo:
+        params = None
+
+        if message.chat.type in GROUP_TYPES:
+            params = EphemeralMessageParameters(
+                receiver_user_id=callback.from_user.id,
+                callback_query_id=callback.id,
+                replace_callback_query_message=False,
+            )
+
+        sent = await send_menu(
+            bot,
+            menu_name,
+            message.chat.id,
+            player=player,
+            message_thread_id=getattr(
+                message, "message_thread_id", None
+            ),
+            ephemeral_message_parameters=params,
+        )
+
+        # Новое меню отправлено. Старое теперь можно удалить.
+        try:
+            if message.chat.type == "private":
+                await bot.delete_message(
+                    chat_id=message.chat.id,
+                    message_id=message.message_id,
+                )
+            else:
+                await bot.delete_ephemeral_message(
+                    chat_id=message.chat.id,
+                    receiver_user_id=callback.from_user.id,
+                    ephemeral_message_id=message.ephemeral_message_id,
+                )
+        except TelegramAPIError:
+            logger.warning(
+                "Не удалось удалить предыдущее личное меню",
+                exc_info=True,
+            )
+
+        return sent
+
+    # Если оба меню являются фотографиями, меняем подпись.
+    if current_has_photo:
+        if len(text) > 1024:
+            raise ValueError("Подпись изображения слишком длинная")
+
+        if message.chat.type == "private":
+            await bot.edit_message_caption(
+                chat_id=message.chat.id,
+                message_id=message.message_id,
+                caption=text,
+                reply_markup=keyboard,
+            )
+        else:
+            await bot.edit_ephemeral_message_caption(
+                chat_id=message.chat.id,
+                receiver_user_id=callback.from_user.id,
+                ephemeral_message_id=message.ephemeral_message_id,
+                caption=text,
+                reply_markup=keyboard,
+            )
+
+    # Обычное текстовое меню редактируем как раньше.
+    elif message.chat.type == "private":
         await bot.edit_message_text(
             chat_id=message.chat.id,
             message_id=message.message_id,
@@ -170,23 +280,24 @@ async def show_callback_menu(
 
 async def send_command_menu(message, bot, menu_name, player=None):
     """Показывает меню после команды /create."""
-    text, keyboard = load_menu(menu_name, player=player)
+    is_group = message.chat.type in GROUP_TYPES
 
-    if message.chat.type == "private":
-        return await bot.send_message(
-            chat_id=message.chat.id,
-            text=text,
-            reply_markup=keyboard,
+    params = None
+
+    if is_group:
+        params = EphemeralMessageParameters(
+            receiver_user_id=message.from_user.id,
         )
 
-    return await bot.send_message(
-        chat_id=message.chat.id,
-        message_thread_id=message.message_thread_id,
-        text=text,
-        reply_markup=keyboard,
-        ephemeral_message_parameters=EphemeralMessageParameters(
-            receiver_user_id=message.from_user.id,
+    return await send_menu(
+        bot,
+        menu_name,
+        message.chat.id,
+        player=player,
+        message_thread_id=(
+            message.message_thread_id if is_group else None
         ),
+        ephemeral_message_parameters=params,
     )
 
 

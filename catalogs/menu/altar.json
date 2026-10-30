@@ -1,0 +1,7 @@
+
+{
+  "text": "Алтарь\n\nВ разработке.",
+  "buttons": [
+    {"text": "◀ Главное меню", "callback_data": "mini:main"}
+  ]
+}

@@ -13,7 +13,12 @@ from aiogram.types import (
 
 from src.mainplayer.storage import get_player
 from .menus import load_menu
-from .creation import next_menu
+from .creation import (
+    is_personal_callback,
+    next_menu,
+    send_menu,
+    show_callback_menu,
+)
 
 router = Router()
 logger = logging.getLogger(__name__)
@@ -23,6 +28,30 @@ ADMIN_STATUSES = {"administrator", "creator"}
 
 def player_menu(user_id: int) -> str:
     return next_menu(get_player(user_id))
+
+"""@router.message(F.photo)
+async def temporary_photo_id(message: Message):
+    if message.chat.type == "private":
+        await message.answer(message.photo[-1].file_id)"""
+
+@router.callback_query(F.data == "mini:main")
+async def main_callback(callback: CallbackQuery, bot: Bot):
+    """Возврат в главное меню героя."""
+    if not is_personal_callback(callback):
+        await callback.answer(
+            "Это не твоё меню",
+            show_alert=True,
+        )
+        return
+
+    player = get_player(callback.from_user.id)
+
+    await show_callback_menu(
+        callback,
+        bot,
+        next_menu(player),
+        player=player,
+    )
 
 
 @router.message(CommandStart())
@@ -69,34 +98,43 @@ async def create_launcher(message: Message, bot: Bot) -> None:
             logger.exception("Could not notify admin about launcher pin failure")
 
 
+
 @router.message(Command("mini"))
 async def mini_command(message: Message, bot: Bot) -> None:
     if message.from_user is None:
         return
+
     player = get_player(message.from_user.id)
     menu_name = next_menu(player)
-    text, keyboard = load_menu(menu_name, player=player)
 
     if message.chat.type == "private":
-        await message.answer(text, reply_markup=keyboard)
+        await send_menu(
+            bot,
+            menu_name,
+            message.chat.id,
+            player=player,
+        )
         return
+
     if message.chat.type not in GROUP_TYPES:
         return
 
-    # Bot should be a chat administrator to respond privately to a group command
-    # without a callback_query_id. No fallback to a PUBLIC message on failure.
     try:
-        await bot.send_message(
-            chat_id=message.chat.id,
+        await send_menu(
+            bot,
+            menu_name,
+            message.chat.id,
+            player=player,
             message_thread_id=message.message_thread_id,
-            text=text,
-            reply_markup=keyboard,
             ephemeral_message_parameters=EphemeralMessageParameters(
                 receiver_user_id=message.from_user.id,
             ),
         )
     except TelegramAPIError:
-        logger.exception("Failed to show ephemeral /mini for user %s", message.from_user.id)
+        logger.exception(
+            "Failed to show ephemeral /mini for user %s",
+            message.from_user.id,
+        )
 
 
 
@@ -121,41 +159,47 @@ async def play_callback(callback: CallbackQuery, bot: Bot) -> None:
     player = get_player(callback.from_user.id)
     menu_name = next_menu(player)
 
-    # Передаём данные персонажа для подстановки в JSON
-    text, keyboard = load_menu(menu_name, player=player)
-
     old_ephemeral_id = getattr(
         message, "ephemeral_message_id", None
     )
 
+    
     try:
         if message.chat.type == "private":
-            # В личном чате отправляем новое сообщение
-            await bot.send_message(
-                chat_id=message.chat.id,
-                text=text,
-                reply_markup=keyboard,
+            await send_menu(
+                bot,
+                menu_name,
+                message.chat.id,
+                player=player,
             )
 
         elif message.chat.type in GROUP_TYPES:
-            # В группе отправляем НОВОЕ личное меню
-            await bot.send_message(
-                chat_id=message.chat.id,
+            await send_menu(
+                bot,
+                menu_name,
+                message.chat.id,
+                player=player,
                 message_thread_id=getattr(
                     message, "message_thread_id", None
                 ),
-                text=text,
-                reply_markup=keyboard,
                 ephemeral_message_parameters=EphemeralMessageParameters(
                     receiver_user_id=callback.from_user.id,
                     callback_query_id=callback.id,
                     replace_callback_query_message=False,
                 ),
             )
-
         else:
             await callback.answer()
             return
+
+    except TelegramAPIError:
+        logger.exception("Failed to open menu for %s", callback.from_user.id)
+        await callback.answer(
+            "Не удалось открыть меню.",
+            show_alert=True,
+        )
+        return
+
 
     except TelegramAPIError:
         logger.exception("Failed to open menu for %s", callback.from_user.id)

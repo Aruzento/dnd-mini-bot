@@ -1,8 +1,14 @@
 
 {
-  "text": "Главное меню\n\n{name}\n{race} | {class_name}",
+  "text": "⚔ D&D MINI 2.0\n\nГлавное меню · Навигация\n\nВыбери, куда хочешь отправиться.\n\nПрофиль — информация о герое.\nКарта — исследование игрового мира.\nДеревня — поселение, торговля и услуги.\nАлтарь — особое место для развития героя.",
   "image": {
-    "file_id": null
+    "file_id": "AgACAgIAAxkBAAPUauR-ISzV62-BtlAvIuoLT7YNB2EAAmchaxueOCFL7fpvawrNnsUBAAMCAAN4AAM9BA"
   },
-  "buttons": []
+  "columns": 2,
+  "buttons": [
+    {"text": "Профиль", "callback_data": "mini:profile"},
+    {"text": "Карта", "callback_data": "mini:map"},
+    {"text": "Деревня", "callback_data": "mini:village"},
+    {"text": "Алтарь", "callback_data": "mini:altar"}
+  ]
 }

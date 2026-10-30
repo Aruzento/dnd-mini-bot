@@ -15,6 +15,10 @@ from src.main.home import (
     player_menu,
 )
 
+from src.main.home import main_callback
+from src.main.profile import profile_callback
+from src.main.locations import location_callback
+
 class MenuCatalogTests(unittest.TestCase):
     def test_all_menus_load(self):
         text, buttons = load_menu("launcher")
@@ -22,8 +26,17 @@ class MenuCatalogTests(unittest.TestCase):
         self.assertEqual(buttons.inline_keyboard[0][0].text, "Играть")
 
         text, buttons = load_menu("main")
-        self.assertTrue(text)
-        self.assertIsNone(buttons)
+        self.assertIn("Главное меню", text)
+
+        labels = [
+            [button.text for button in row]
+            for row in buttons.inline_keyboard
+        ]
+
+        self.assertEqual(labels, [
+            ["Профиль", "Карта"],
+            ["Деревня", "Алтарь"],
+        ])
 
         text, buttons = load_menu("create")
         self.assertTrue(text)
@@ -89,7 +102,121 @@ class MenuHandlersTests(unittest.IsolatedAsyncioTestCase):
             pin_chat_message=AsyncMock(),
             delete_ephemeral_message=AsyncMock(),
             delete_message=AsyncMock(),
+            send_photo=AsyncMock(),
+            edit_ephemeral_message_caption=AsyncMock(),
         )
+
+    
+    async def test_profile_navigation(self):
+        player = SimpleNamespace(
+            name="Ренкай",
+            level=1,
+            race="elf",
+            class_name="fighter",
+        )
+
+        message = SimpleNamespace(
+            chat=self.chat,
+            message_id=0,
+            ephemeral_message_id=45,
+            receiver_user=self.user,
+        )
+
+        callback = SimpleNamespace(
+            id="callback-profile",
+            data="mini:profile",
+            from_user=self.user,
+            message=message,
+            answer=AsyncMock(),
+        )
+
+        with patch(
+            "src.main.creation.load_menu_image",
+            return_value=None,
+        ):
+            with patch(
+                "src.main.profile.get_player",
+                return_value=player,
+            ):
+                await profile_callback(callback, self.bot)
+
+        text = self.bot.edit_ephemeral_message_text.await_args.kwargs["text"]
+        self.assertIn("Уровень: 1", text)
+        self.assertIn("Раса: Эльф", text)
+
+        self.bot.edit_ephemeral_message_text.reset_mock()
+
+        with patch(
+            "src.main.creation.load_menu_image",
+            return_value=None,
+        ):
+            with patch(
+                "src.main.home.get_player",
+                return_value=player,
+            ):
+                await main_callback(callback, self.bot)
+
+        text = self.bot.edit_ephemeral_message_text.await_args.kwargs["text"]
+        self.assertIn("Главное меню", text)
+
+    async def test_location_navigation(self):
+        player = SimpleNamespace(
+            race="elf",
+            class_name="fighter",
+        )
+
+        message = SimpleNamespace(
+            chat=self.chat,
+            message_id=0,
+            ephemeral_message_id=45,
+            receiver_user=self.user,
+        )
+
+        for action in ("mini:map", "mini:village", "mini:altar"):
+            with self.subTest(action=action):
+                self.bot.edit_ephemeral_message_text.reset_mock()
+
+                callback = SimpleNamespace(
+                    id="callback-location",
+                    data=action,
+                    from_user=self.user,
+                    message=message,
+                    answer=AsyncMock(),
+                )
+
+                with patch(
+                    "src.main.locations.get_player",
+                    return_value=player,
+                ):
+                    await location_callback(callback, self.bot)
+
+                text = (
+                    self.bot.edit_ephemeral_message_text
+                    .await_args.kwargs["text"]
+                )
+                self.assertIn("В разработке", text)
+
+    async def test_foreign_user_cannot_open_profile(self):
+        message = SimpleNamespace(
+            chat=self.chat,
+            message_id=0,
+            ephemeral_message_id=45,
+            receiver_user=SimpleNamespace(id=456),
+        )
+
+        callback = SimpleNamespace(
+            data="mini:profile",
+            from_user=self.user,
+            message=message,
+            answer=AsyncMock(),
+        )
+
+        await profile_callback(callback, self.bot)
+
+        self.bot.edit_ephemeral_message_text.assert_not_awaited()
+        self.bot.send_message.assert_not_awaited()
+        callback.answer.assert_awaited_once()
+
 
     async def test_minicreate_pins_launcher(self):
         message = SimpleNamespace(chat=self.chat, message_thread_id=2, from_user=self.user)
@@ -157,17 +284,21 @@ class MenuHandlersTests(unittest.IsolatedAsyncioTestCase):
             class_name="fighter",
         )
 
-        with patch("src.main.home.get_player", return_value=player):
-            await play_callback(callback, self.bot)
+        with patch(
+            "src.main.creation.load_menu_image",
+            return_value=None,
+        ):
+            with patch(
+                "src.main.home.get_player",
+                return_value=player,
+            ):
+                await play_callback(callback, self.bot)
 
         sent_text = self.bot.send_message.await_args.kwargs["text"]
 
-        self.assertIn("Ренкай", sent_text)
-        self.assertIn("Эльф | Воин", sent_text)
-
+        self.assertIn("Главное меню", sent_text)
+        self.assertIn("Профиль —", sent_text)
         self.assertNotIn("{name}", sent_text)
-        self.assertNotIn("{race}", sent_text)
-        self.assertNotIn("{class_name}", sent_text)
 
         # Создано новое личное меню
         self.bot.send_message.assert_awaited_once()
@@ -214,17 +345,27 @@ class MenuHandlersTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("Эльф", labels)
 
 
-    def test_main_menu_uses_character_catalog(self):
+    
+    def test_profile_menu_uses_character_catalog(self):
         player = SimpleNamespace(
             name="Ренкай",
+            level=1,
             race="elf",
             class_name="fighter",
         )
 
-        text, _ = load_menu("main", player=player)
+        text, keyboard = load_menu("profile", player=player)
 
-        self.assertIn("Ренкай", text)
-        self.assertIn("Эльф | Воин", text)
+        self.assertIn("Имя: Ренкай", text)
+        self.assertIn("Уровень: 1", text)
+        self.assertIn("Раса: Эльф", text)
+        self.assertIn("Класс: Воин", text)
+
+        self.assertEqual(
+            keyboard.inline_keyboard[0][0].callback_data,
+            "mini:main",
+        )
+
 
 
 if __name__ == "__main__":
