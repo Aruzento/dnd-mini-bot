@@ -1,0 +1,10 @@
+
+{
+  "text": "Галерея\n\nВ разработке.",
+  "buttons": [
+    {
+      "text": "◀ Профиль",
+      "callback_data": "mini:profile"
+    }
+  ]
+}

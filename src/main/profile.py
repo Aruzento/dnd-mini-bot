@@ -14,8 +14,20 @@ from .creation import (
 router = Router(name="mini_profile")
 
 
-@router.callback_query(F.data == "mini:profile")
+
+PROFILE_MENUS = {
+    "mini:profile": "profile",
+    "mini:profile:party": "party",
+    "mini:profile:stats": "stats",
+    "mini:profile:collection": "collection",
+    "mini:profile:gallery": "gallery",
+}
+
+
+@router.callback_query(F.data.in_(PROFILE_MENUS))
 async def profile_callback(callback: CallbackQuery, bot: Bot):
+    """Навигация по разделам профиля."""
+
     if not is_personal_callback(callback):
         await callback.answer(
             "Это не твоё меню",
@@ -26,7 +38,11 @@ async def profile_callback(callback: CallbackQuery, bot: Bot):
     player = get_player(callback.from_user.id)
     current_menu = next_menu(player)
 
-    target = "profile" if current_menu == "main" else current_menu
+    target = (
+        PROFILE_MENUS[callback.data]
+        if current_menu == "main"
+        else current_menu
+    )
 
     await show_callback_menu(
         callback,

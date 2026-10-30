@@ -42,6 +42,40 @@ class MenuCatalogTests(unittest.TestCase):
         self.assertTrue(text)
         self.assertEqual(buttons.inline_keyboard[0][0].callback_data, "mini:create")
 
+    
+    def test_profile_buttons_layout(self):
+        player = SimpleNamespace(
+            name="Ренкай",
+            level=1,
+            race="elf",
+            class_name="fighter",
+        )
+
+        _, keyboard = load_menu("profile", player=player)
+
+        labels = [
+            [button.text for button in row]
+            for row in keyboard.inline_keyboard
+        ]
+
+        self.assertEqual(labels, [
+            ["Отряд", "Характеристики"],
+            ["Коллекция", "Галерея"],
+            ["◀ Главное меню"],
+        ])
+
+    def test_profile_submenus(self):
+        for menu in ("party", "stats", "collection", "gallery"):
+            with self.subTest(menu=menu):
+                text, keyboard = load_menu(menu)
+
+                self.assertIn("В разработке", text)
+                self.assertEqual(
+                    keyboard.inline_keyboard[0][0].callback_data,
+                    "mini:profile",
+                )
+
+
     def test_json_is_reloaded_without_restart(self):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "main.json"
@@ -105,6 +139,60 @@ class MenuHandlersTests(unittest.IsolatedAsyncioTestCase):
             send_photo=AsyncMock(),
             edit_ephemeral_message_caption=AsyncMock(),
         )
+
+    
+    async def test_profile_sections_navigation(self):
+        player = SimpleNamespace(
+            name="Ренкай",
+            level=1,
+            race="elf",
+            class_name="fighter",
+        )
+
+        actions = {
+            "mini:profile:party": "Отряд",
+            "mini:profile:stats": "Характеристики",
+            "mini:profile:collection": "Коллекция",
+            "mini:profile:gallery": "Галерея",
+        }
+
+        for action, title in actions.items():
+            with self.subTest(action=action):
+                self.bot.edit_ephemeral_message_text.reset_mock()
+
+                callback = SimpleNamespace(
+                    id="test-profile-section",
+                    data=action,
+                    from_user=self.user,
+                    message=SimpleNamespace(
+                        chat=self.chat,
+                        message_id=0,
+                        ephemeral_message_id=45,
+                        receiver_user=self.user,
+                    ),
+                    answer=AsyncMock(),
+                )
+
+                with patch(
+                    "src.main.profile.get_player",
+                    return_value=player,
+                ):
+                    with patch(
+                        "src.main.creation.load_menu_image",
+                        return_value=None,
+                    ):
+                        await profile_callback(callback, self.bot)
+
+                self.bot.edit_ephemeral_message_text.assert_awaited_once()
+
+                text = (
+                    self.bot.edit_ephemeral_message_text
+                    .await_args.kwargs["text"]
+                )
+
+                self.assertIn(title, text)
+                self.assertIn("В разработке", text)
+                callback.answer.assert_awaited_once()
 
     
     async def test_profile_navigation(self):
@@ -356,13 +444,18 @@ class MenuHandlersTests(unittest.IsolatedAsyncioTestCase):
 
         text, keyboard = load_menu("profile", player=player)
 
-        self.assertIn("Имя: Ренкай", text)
+        self.assertIn("Ренкай", text)
         self.assertIn("Уровень: 1", text)
         self.assertIn("Раса: Эльф", text)
         self.assertIn("Класс: Воин", text)
 
         self.assertEqual(
             keyboard.inline_keyboard[0][0].callback_data,
+            "mini:profile:party",
+        )
+
+        self.assertEqual(
+            keyboard.inline_keyboard[-1][0].callback_data,
             "mini:main",
         )
 

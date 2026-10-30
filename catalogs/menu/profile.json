@@ -1,7 +1,27 @@
 
 {
   "text": "Профиль героя {name}\n\nУровень: {level}\nРаса: {race}\t|\tКласс: {class_name}",
+  "columns": 2,
   "buttons": [
-    {"text": "◀ Главное меню", "callback_data": "mini:main"}
+    {
+      "text": "Отряд",
+      "callback_data": "mini:profile:party"
+    },
+    {
+      "text": "Характеристики",
+      "callback_data": "mini:profile:stats"
+    },
+    {
+      "text": "Коллекция",
+      "callback_data": "mini:profile:collection"
+    },
+    {
+      "text": "Галерея",
+      "callback_data": "mini:profile:gallery"
+    },
+    {
+      "text": "◀ Главное меню",
+      "callback_data": "mini:main"
+    }
   ]
 }
