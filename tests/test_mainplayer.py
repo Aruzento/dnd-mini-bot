@@ -6,6 +6,7 @@ from pathlib import Path
 
 from src.mainplayer.model import MainPlayer
 from src.mainplayer.storage import (
+    set_base_stat,
     create_player,
     get_player,
     init_db,
@@ -40,6 +41,57 @@ class MainPlayerTests(unittest.TestCase):
                     player.hp_max,
                     modifier + 4,
                 )
+
+    def test_hp_recalculates_after_stat_change(self):
+        create_player(123, "Тест", self.db_path)
+
+        set_race_and_class(
+            123, "tiefling", "wizard", self.db_path
+        )
+
+        player = get_player(123, self.db_path)
+
+        # Базовое CON = 0, пассивка lvl1up даёт +1.
+        self.assertEqual(player.hp_max, 7)
+        self.assertEqual(player.current_hp, 7)
+
+        # Изменяем базовое телосложение на 10.
+        set_base_stat(
+            123, "constitution", 10, self.db_path
+        )
+
+        player = get_player(123, self.db_path)
+
+        # CON = 10 + 1 от lvl1up.
+        self.assertEqual(player.effective_stats["constitution"], 11)
+        self.assertEqual(player.hp_max, 17)
+        self.assertEqual(player.current_hp, 17)
+
+        # Сохраняем фактическое здоровье после урона.
+        set_hp_now(123, 9, self.db_path)
+
+        # Увеличиваем базовое телосложение.
+        set_base_stat(
+            123, "constitution", 12, self.db_path
+        )
+
+        player = get_player(123, self.db_path)
+
+        self.assertEqual(player.hp_max, 19)
+        self.assertEqual(player.current_hp, 9)
+
+    def test_tiefling_wizard_starting_hp(self):
+        create_player(123, "Тест", self.db_path)
+
+        player = set_race_and_class(
+            123, "tiefling", "wizard", self.db_path
+        )
+
+        self.assertEqual(
+            player.effective_stats["constitution"], 1
+        )
+        self.assertEqual(player.hp_max, 7)
+        self.assertEqual(player.current_hp, 7)
 
     def test_hp_persistence(self):
         create_player(123, "Ренкай", self.db_path)

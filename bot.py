@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from src.main.home import router as home_router
 from src.main.profile import router as profile_router
 from src.main.locations import router as locations_router
+from src.adm.commands import router as admin_router
 from src.mainplayer.storage import init_db
 from src.main.creation import (
     init_creation_db,
@@ -29,6 +30,7 @@ async def main():
     bot = Bot(token=TOKEN)
     dp = Dispatcher()
     dp.include_routers(
+        admin_router,
         home_router,
         profile_router,
         locations_router,

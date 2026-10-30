@@ -56,7 +56,8 @@ def init_db(db_path: Path = DB_PATH):
                     CHECK (level >= 1),
                 stats TEXT NOT NULL DEFAULT '{DEFAULT_STATS_JSON}',
                 passives TEXT NOT NULL DEFAULT '[]',
-                hp_now INTEGER CHECK (hp_now >= 0)
+                hp_now INTEGER CHECK (hp_now >= 0),
+                username TEXT COLLATE NOCASE UNIQUE
             )
         """)
 
@@ -107,6 +108,32 @@ def migrate_player_hp(db_path: Path = DB_PATH):
                 ADD COLUMN hp_now INTEGER CHECK (hp_now >= 0)
             """)
 
+
+def migrate_player_usernames(db_path: Path = DB_PATH):
+    """Добавляет username к существующим героям."""
+
+    with closing(_connect(db_path)) as conn, conn:
+        conn.execute("BEGIN IMMEDIATE")
+
+        columns = {
+            row["name"]
+            for row in conn.execute("PRAGMA table_info(players)")
+        }
+
+        if not columns:
+            raise ValueError("Таблица players не найдена")
+
+        if "username" not in columns:
+            conn.execute("""
+                ALTER TABLE players
+                ADD COLUMN username TEXT COLLATE NOCASE
+            """)
+
+        conn.execute("""
+            CREATE UNIQUE INDEX IF NOT EXISTS
+            idx_players_username
+            ON players(username COLLATE NOCASE)
+        """)
 
 
 def get_player(
@@ -451,6 +478,79 @@ def set_hp_now(
         )
 
     return True
+
+
+def remember_player_username(
+    player_id: int,
+    username: str | None,
+    db_path: Path = DB_PATH,
+) -> bool:
+    """Обновляет Telegram username существующего героя."""
+
+    with closing(_connect(db_path)) as conn, conn:
+        conn.execute("BEGIN IMMEDIATE")
+
+        exists = conn.execute(
+            "SELECT 1 FROM players WHERE id = ?",
+            (player_id,),
+        ).fetchone()
+
+        if exists is None:
+            return False
+
+        # Username может перейти к другому аккаунту.
+        if username is not None:
+            conn.execute("""
+                UPDATE players
+                SET username = NULL
+                WHERE username = ? COLLATE NOCASE
+                  AND id <> ?
+            """, (username, player_id))
+
+        conn.execute(
+            "UPDATE players SET username = ? WHERE id = ?",
+            (username, player_id),
+        )
+
+    return True
+
+
+def find_player_id_by_username(
+    username: str,
+    db_path: Path = DB_PATH,
+) -> int | None:
+    """Ищет Telegram ID по сохранённому username."""
+
+    with closing(_connect(db_path)) as conn:
+        row = conn.execute("""
+            SELECT id
+            FROM players
+            WHERE username = ? COLLATE NOCASE
+        """, (username,)).fetchone()
+
+    return row["id"] if row is not None else None
+
+
+def delete_player(
+    player_id: int,
+    db_path: Path = DB_PATH,
+) -> bool:
+    """Безвозвратно удаляет героя и данные создания."""
+
+    with closing(_connect(db_path)) as conn, conn:
+        conn.execute("BEGIN IMMEDIATE")
+
+        result = conn.execute(
+            "DELETE FROM players WHERE id = ?",
+            (player_id,),
+        )
+
+        conn.execute(
+            "DELETE FROM creation_prompts WHERE user_id = ?",
+            (player_id,),
+        )
+
+    return result.rowcount > 0
 
 
 if __name__ == "__main__":

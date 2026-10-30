@@ -11,7 +11,10 @@ from aiogram.types import (
     Message,
 )
 
-from src.mainplayer.storage import get_player
+from src.mainplayer.storage import (
+    get_player,
+    remember_player_username,
+)
 from .menus import load_menu
 from .creation import (
     is_personal_callback,
@@ -105,6 +108,11 @@ async def mini_command(message: Message, bot: Bot) -> None:
         return
 
     player = get_player(message.from_user.id)
+    if hasattr(message.from_user, "username"):
+        remember_player_username(
+            message.from_user.id,
+            message.from_user.username,
+        )
     menu_name = next_menu(player)
 
     if message.chat.type == "private":
@@ -157,6 +165,11 @@ async def play_callback(callback: CallbackQuery, bot: Bot) -> None:
 
     # Получаем персонажа и определяем нужное меню
     player = get_player(callback.from_user.id)
+    if hasattr(callback.from_user, "username"):
+        remember_player_username(
+            callback.from_user.id,
+            callback.from_user.username,
+        )
     menu_name = next_menu(player)
 
     old_ephemeral_id = getattr(

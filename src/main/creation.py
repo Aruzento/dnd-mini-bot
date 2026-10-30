@@ -22,6 +22,7 @@ from src.mainplayer.storage import (
     create_player,
     get_player,
     set_class,
+    remember_player_username,
     set_race,
 )
 from .menus import load_menu, load_menu_image
@@ -430,6 +431,11 @@ async def create_command(
             # Защита от двух почти одновременных команд.
             player = get_player(message.from_user.id)
 
+    if player is not None and hasattr(message.from_user, "username"):
+        remember_player_username(
+            message.from_user.id,
+            message.from_user.username,
+        )
     menu_name = next_menu(player)
 
     # Удаляем команду, содержащую имя.
