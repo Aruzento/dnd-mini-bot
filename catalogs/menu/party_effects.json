@@ -1,0 +1,15 @@
+
+{
+  "text": "Эффекты отряда\n\nХарактеристики:\n{stats}\n\nПассивки:\n{passives}",
+  "columns": 2,
+  "buttons": [
+    {
+      "text": "Назад",
+      "callback_data": "mini:profile:party"
+    },
+    {
+      "text": "На главную",
+      "callback_data": "mini:main"
+    }
+  ]
+}

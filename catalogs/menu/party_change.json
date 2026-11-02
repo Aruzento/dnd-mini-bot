@@ -1,0 +1,35 @@
+
+{
+  "text": "Отряд\n\nКакой слот изменить?",
+  "columns": 1,
+  "buttons": [
+    {
+      "text": "Танк",
+      "callback_data": "mini:party:slot:tank"
+    },
+    {
+      "text": "ДД",
+      "callback_data": "mini:party:slot:dd"
+    },
+    {
+      "text": "Хил",
+      "callback_data": "mini:party:slot:heal"
+    },
+    {
+      "text": "Бафф",
+      "callback_data": "mini:party:slot:buff"
+    },
+    {
+      "text": "АОЕ",
+      "callback_data": "mini:party:slot:aoe"
+    },
+    {
+      "text": "Назад",
+      "callback_data": "mini:profile:party"
+    },
+    {
+      "text": "На главную",
+      "callback_data": "mini:main"
+    }
+  ]
+}

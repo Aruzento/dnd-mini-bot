@@ -44,7 +44,10 @@ def load_menu_image(name: str) -> str | None:
 
 def load_menu(
     name: str,
-    player=None
+    player=None,
+    *,
+    context: dict | None = None,
+    dynamic_buttons: dict | None = None,
 ) -> tuple[str, InlineKeyboardMarkup | None]:
     """Return menu text and its keyboard; read the JSON every time."""
     data = _read_menu_data(name)
@@ -67,6 +70,11 @@ def load_menu(
             hp_max=player.hp_max,
         )
 
+    if context is not None:
+        if not isinstance(context, dict):
+            raise ValueError("Некорректный контекст меню")
+
+        text = text.format_map(context)
     columns = data.get("columns", 1)
 
     if type(columns) is not int or not 1 <= columns <= 8:
@@ -111,24 +119,88 @@ def load_menu(
         ]
 
 
+
+    dynamic_buttons = dynamic_buttons or {}
+
+    if not isinstance(dynamic_buttons, dict):
+        raise ValueError("Некорректные динамические кнопки")
+
     rows = []
-    for button in buttons:
-        if not isinstance(button, dict):
-            raise ValueError(f"Invalid button in {name}")
-        label = button["text"]
-        action = button["callback_data"]
-        if not isinstance(label, str) or not label.strip() or not isinstance(action, str):
-            raise ValueError(f"Invalid button in {name}")
-        if not 1 <= len(action.encode("utf-8")) <= 64:
-            raise ValueError(f"Invalid callback size in {name}")
-        if not rows or len(rows[-1]) == columns:
-            rows.append([])
 
-        rows[-1].append(
-            InlineKeyboardButton(
-                text=label,
-                callback_data=action,
+    for entry in buttons:
+        if not isinstance(entry, dict):
+            raise ValueError(f"Некорректная кнопка меню: {name}")
+
+        # Условие отображения кнопки.
+        condition = entry.get("when")
+
+        if condition is not None:
+            if (
+                not isinstance(condition, str)
+                or context is None
+                or type(context.get(condition)) is not bool
+            ):
+                raise ValueError(
+                    f"Некорректное условие кнопки: {name}"
+                )
+
+            if not context[condition]:
+                continue
+
+        # Вставка динамических кнопок на место маркера.
+        if "dynamic" in entry:
+            key = entry["dynamic"]
+
+            if (
+                not isinstance(key, str)
+                or key not in dynamic_buttons
+                or not isinstance(dynamic_buttons[key], list)
+            ):
+                raise ValueError(
+                    f"Неизвестные динамические кнопки: {name}"
+                )
+
+            current_buttons = dynamic_buttons[key]
+        else:
+            current_buttons = [entry]
+
+        for button in current_buttons:
+            if not isinstance(button, dict):
+                raise ValueError(f"Некорректная кнопка: {name}")
+
+            label = button.get("text")
+            action = button.get("callback_data")
+
+            if not isinstance(label, str):
+                raise ValueError(f"Некорректный текст кнопки: {name}")
+
+            if not isinstance(action, str):
+                raise ValueError(f"Некорректный callback: {name}")
+
+            if context is not None:
+                label = label.format_map(context)
+                action = action.format_map(context)
+
+            if not label.strip():
+                raise ValueError(f"Пустая кнопка: {name}")
+
+            if not 1 <= len(action.encode("utf-8")) <= 64:
+                raise ValueError(f"Invalid callback size: {name}")
+
+            if not rows or len(rows[-1]) == columns:
+                rows.append([])
+
+            rows[-1].append(
+                InlineKeyboardButton(
+                    text=label,
+                    callback_data=action,
+                )
             )
-        )
 
-    return text, InlineKeyboardMarkup(inline_keyboard=rows) if rows else None
+    keyboard = (
+        InlineKeyboardMarkup(inline_keyboard=rows)
+        if rows else None
+    )
+
+    return text, keyboard
+

@@ -1,10 +1,22 @@
-
 {
-  "text": "Отряд\n\nВ разработке.",
+  "text": "Отряд\n\n{slots}",
+  "columns": 2,
   "buttons": [
     {
-      "text": "◀ Профиль",
+      "text": "Сменить...",
+      "callback_data": "mini:party:change"
+    },
+    {
+      "text": "Эффекты отряда",
+      "callback_data": "mini:party:effects"
+    },
+    {
+      "text": "Назад",
       "callback_data": "mini:profile"
+    },
+    {
+      "text": "На главную",
+      "callback_data": "mini:main"
     }
   ]
 }

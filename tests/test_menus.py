@@ -42,6 +42,91 @@ class MenuCatalogTests(unittest.TestCase):
         self.assertTrue(text)
         self.assertEqual(buttons.inline_keyboard[0][0].callback_data, "mini:create")
 
+
+
+    def test_party_change_from_json(self):
+        text, keyboard = load_menu("party_change")
+
+        self.assertIn("Какой слот изменить?", text)
+
+        actions = [
+            button.callback_data
+            for row in keyboard.inline_keyboard
+            for button in row
+        ]
+
+        for slot in ("tank", "dd", "heal", "buff", "aoe"):
+            self.assertIn(f"mini:party:slot:{slot}", actions)
+
+    def test_party_slot_dynamic_buttons(self):
+        context = {
+            "slot": "aoe",
+            "slot_name": "АОЕ",
+            "prompt": "Выбери персонажа:",
+            "occupied": True,
+        }
+
+        text, keyboard = load_menu(
+            "party_slot",
+            context=context,
+            dynamic_buttons={
+                "characters": [
+                    {
+                        "text": "Арза Зента",
+                        "callback_data": (
+                            "mini:party:equip:aoe:arza_zenta"
+                        ),
+                    }
+                ],
+            },
+        )
+
+        self.assertIn("Слот [АОЕ]", text)
+
+        actions = [
+            button.callback_data
+            for row in keyboard.inline_keyboard
+            for button in row
+        ]
+
+        self.assertEqual(actions[0],
+                         "mini:party:equip:aoe:arza_zenta")
+        self.assertIn("mini:party:remove:aoe", actions)
+
+        # Если слот пуст, кнопки снятия быть не должно.
+        context["occupied"] = False
+
+        _, keyboard = load_menu(
+            "party_slot",
+            context=context,
+            dynamic_buttons={"characters": []},
+        )
+
+        actions = [
+            button.callback_data
+            for row in keyboard.inline_keyboard
+            for button in row
+        ]
+
+        self.assertNotIn("mini:party:remove:aoe", actions)
+
+    def test_party_effects_from_json(self):
+        text, keyboard = load_menu(
+            "party_effects",
+            context={
+                "stats": "Интеллект: +3",
+                "passives": "Шалость",
+            },
+        )
+
+        self.assertIn("Интеллект: +3", text)
+        self.assertIn("Шалость", text)
+
+        self.assertEqual(
+            keyboard.inline_keyboard[0][0].callback_data,
+            "mini:profile:party",
+        )
+
     
     def test_profile_buttons_layout(self):
         player = SimpleNamespace(
@@ -67,7 +152,7 @@ class MenuCatalogTests(unittest.TestCase):
         ])
 
     def test_profile_submenus(self):
-        for menu in ("party", "stats", "collection", "gallery"):
+        for menu in ("stats", "collection", "gallery"):
             with self.subTest(menu=menu):
                 text, keyboard = load_menu(menu)
 
@@ -152,7 +237,6 @@ class MenuHandlersTests(unittest.IsolatedAsyncioTestCase):
         )
 
         actions = {
-            "mini:profile:party": "Отряд",
             "mini:profile:stats": "Характеристики",
             "mini:profile:collection": "Коллекция",
             "mini:profile:gallery": "Галерея",

@@ -1,0 +1,23 @@
+
+{
+  "text": "Слот [{slot_name}]\n\n{prompt}",
+  "columns": 1,
+  "buttons": [
+    {
+      "dynamic": "characters"
+    },
+    {
+      "text": "Снять персонажа",
+      "callback_data": "mini:party:remove:{slot}",
+      "when": "occupied"
+    },
+    {
+      "text": "Назад",
+      "callback_data": "mini:party:change"
+    },
+    {
+      "text": "На главную",
+      "callback_data": "mini:main"
+    }
+  ]
+}
