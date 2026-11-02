@@ -2,6 +2,12 @@
 import os
 import tempfile
 import unittest
+import asyncio
+
+from src.adm.commands import (
+    admin_image_photo,
+    admin_image_usage,
+)
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
@@ -145,3 +151,144 @@ class AdminCommandTests(unittest.IsolatedAsyncioTestCase):
                     )
 
         delete.assert_not_called()
+
+
+    def make_photo(
+        self,
+        message_id,
+        caption=None,
+        album=None,
+    ):
+        """Тестовая фотография с двумя размерами."""
+
+        return SimpleNamespace(
+            message_id=message_id,
+            from_user=self.message.from_user,
+            chat=self.message.chat,
+            caption=caption,
+            media_group_id=album,
+            photo=[
+                SimpleNamespace(
+                    file_id=f"small_{message_id}",
+                    width=100,
+                    height=100,
+                    file_size=1000,
+                ),
+                SimpleNamespace(
+                    file_id=f"large_{message_id}",
+                    width=1000,
+                    height=1000,
+                    file_size=50000,
+                ),
+            ],
+            answer=AsyncMock(),
+        )
+
+    async def test_admimage_single_photo(self):
+        message = self.make_photo(
+            10, caption="/admimage"
+        )
+
+        with patch.dict(
+            os.environ,
+            {"MINI_ADMIN_IDS": "123"},
+        ):
+            await admin_image_photo(message, self.bot)
+
+        self.bot.send_message.assert_awaited_once()
+
+        text = self.bot.send_message.await_args.kwargs["text"]
+
+        self.assertEqual(text, "file_id:\nlarge_10")
+
+    async def test_admimage_album_order(self):
+        # Приходят не по порядку. Команда не на первом фото.
+        photos = [
+            self.make_photo(30, album="album1"),
+            self.make_photo(
+                20,
+                caption="/admimage",
+                album="album1",
+            ),
+            self.make_photo(25, album="album1"),
+        ]
+
+        with patch.dict(
+            os.environ,
+            {"MINI_ADMIN_IDS": "123"},
+        ), patch(
+            "src.adm.commands.ALBUM_SETTLE_SECONDS",
+            0.02,
+        ):
+            first = asyncio.create_task(
+                admin_image_photo(photos[0], self.bot)
+            )
+
+            await asyncio.sleep(0)
+
+            await admin_image_photo(photos[1], self.bot)
+            await admin_image_photo(photos[2], self.bot)
+
+            await first
+
+        self.bot.send_message.assert_awaited_once()
+
+        text = self.bot.send_message.await_args.kwargs["text"]
+
+        self.assertEqual(
+            text,
+            "file_id изображений:\n"
+            "1. large_20\n"
+            "2. large_25\n"
+            "3. large_30",
+        )
+
+    async def test_admimage_unauthorized(self):
+        message = self.make_photo(
+            10, caption="/admimage"
+        )
+
+        with patch.dict(
+            os.environ,
+            {"MINI_ADMIN_IDS": "999"},
+        ):
+            await admin_image_photo(message, self.bot)
+
+        self.bot.send_message.assert_not_awaited()
+        self.bot.get_chat_member.assert_not_awaited()
+
+    async def test_admimage_ignores_albums_without_command(self):
+        photos = [
+            self.make_photo(10, album="album2"),
+            self.make_photo(11, album="album2"),
+        ]
+
+        with patch.dict(
+            os.environ,
+            {"MINI_ADMIN_IDS": "123"},
+        ), patch(
+            "src.adm.commands.ALBUM_SETTLE_SECONDS",
+            0.02,
+        ):
+            first = asyncio.create_task(
+                admin_image_photo(photos[0], self.bot)
+            )
+
+            await asyncio.sleep(0)
+            await admin_image_photo(photos[1], self.bot)
+            await first
+
+        self.bot.send_message.assert_not_awaited()
+
+    async def test_admimage_usage(self):
+        with patch.dict(
+            os.environ,
+            {"MINI_ADMIN_IDS": "123"},
+        ):
+            await admin_image_usage(
+                self.message,
+                self.bot,
+            )
+
+        text = self.bot.send_message.await_args.kwargs["text"]
+        self.assertIn("/admimage", text)

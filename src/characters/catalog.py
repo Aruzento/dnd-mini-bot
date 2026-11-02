@@ -240,3 +240,22 @@ def load_characters(rarity: str) -> dict:
         )
 
     return characters
+
+def load_character_index() -> dict:
+    """Общий индекс персонажей всех редкостей."""
+
+    index = {}
+
+    for rarity in RARITY_RULES:
+        for character_id, character in load_characters(rarity).items():
+            if character_id in index:
+                raise ValueError(
+                    f"Повторяющийся ID персонажа: {character_id}"
+                )
+
+            index[character_id] = {
+                **character,
+                "rarity": rarity,
+            }
+
+    return index

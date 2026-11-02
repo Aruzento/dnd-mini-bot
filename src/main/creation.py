@@ -161,13 +161,19 @@ async def send_menu(
 
 
 
-async def edit_private_menu(callback, bot, menu_name, player=None):
+async def edit_private_menu(
+    callback, bot, menu_name, player=None, menu_content=None
+):
     """Обновляет личное меню с учётом типа сообщения."""
     if not is_personal_callback(callback):
         raise ValueError("Это не личное меню игрока")
 
     message = callback.message
-    text, keyboard = load_menu(menu_name, player=player)
+    text, keyboard = (
+        load_menu(menu_name, player=player)
+        if menu_content is None
+        else menu_content
+    )
 
     target_has_photo = bool(load_menu_image(menu_name))
     current_has_photo = bool(getattr(message, "photo", None))
@@ -257,12 +263,17 @@ async def edit_private_menu(callback, bot, menu_name, player=None):
 
 
 async def show_callback_menu(
-    callback, bot, menu_name, remember=False, player=None
+    callback, bot, menu_name,
+    remember=False, player=None, menu_content=None,
 ):
     """Общий переход для кнопок регистрации."""
     try:
         message = await edit_private_menu(
-            callback, bot, menu_name, player=player
+            callback,
+            bot,
+            menu_name,
+            player=player,
+            menu_content=menu_content,
         )
 
         if remember:

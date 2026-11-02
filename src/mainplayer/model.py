@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from .catalog import load_character_catalog
 from .attributes import (
+    ABILITIES,
     calculate_defense,
     calculate_max_hp,
     calculate_stats,
@@ -18,10 +19,17 @@ class MainPlayer:
     stats: dict[str, int] = field(default_factory=default_stats)
     passives: list[str] = field(default_factory=list)
     hp_now: int | None = None
+    party_stats: dict[str, int] = field(default_factory=default_stats)
+    party_passives: list[str] = field(default_factory=list)
 
     @property
     def effective_stats(self) -> dict[str, int]:
-        return calculate_stats(self.stats, self.passives)
+        result = calculate_stats(self.stats, self.passives)
+
+        for ability in ABILITIES:
+            result[ability] += self.party_stats[ability]
+
+        return result
 
     def max_hp(self, class_modifier: int) -> int:
         """Вычисляет максимальное здоровье героя."""

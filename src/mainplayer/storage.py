@@ -17,6 +17,7 @@ DEFAULT_STATS_JSON = json.dumps(
 
 def _connect(db_path: Path):
     conn = sqlite3.connect(db_path, timeout=10)
+    conn.execute("PRAGMA foreign_keys = ON")
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -37,6 +38,14 @@ def _read_player(conn, player_id: int) -> MainPlayer | None:
     data = dict(row)
     data["stats"] = json.loads(data["stats"])
     data["passives"] = json.loads(data["passives"])
+    from src.characters.storage_chars import read_party_effects
+
+    party_stats, party_passives = read_party_effects(
+        conn, player_id
+    )
+
+    data["party_stats"] = party_stats
+    data["party_passives"] = party_passives
 
     return MainPlayer(**data)
 
@@ -60,6 +69,9 @@ def init_db(db_path: Path = DB_PATH):
                 username TEXT COLLATE NOCASE UNIQUE
             )
         """)
+    
+    from src.characters.storage_chars import init_party_db
+    init_party_db(db_path)
 
 def migrate_player_stats(db_path: Path = DB_PATH):
     """Совместимая миграция после резервного копирования БД."""
@@ -142,6 +154,9 @@ def migrate_all(db_path: Path = DB_PATH):
     migrate_player_stats(db_path)
     migrate_player_hp(db_path)
     migrate_player_usernames(db_path)
+
+    from src.characters.storage_chars import init_party_db
+    init_party_db(db_path)
 
 
 def get_player(

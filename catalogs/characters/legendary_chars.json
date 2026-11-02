@@ -20,5 +20,26 @@
       "gacha",
       "alchemy"
     ]
+  },
+  "asrael": {
+    "name": "Азраэль",
+    "type": "dd",
+    "stats": {
+      "intelligence": 2,
+      "charisma": 2,
+      "constitution": 1,
+      "dexterity": 4
+    },
+    "passives": [
+      "soul_eater",
+      "steal"
+    ],
+    "village": {
+      "productivity_bonus": 0.1
+    },
+    "obtain": [
+      "gacha",
+      "alchemy"
+    ]
   }
 }
