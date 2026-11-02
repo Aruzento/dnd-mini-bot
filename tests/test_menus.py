@@ -152,7 +152,7 @@ class MenuCatalogTests(unittest.TestCase):
         ])
 
     def test_profile_submenus(self):
-        for menu in ("stats", "collection", "gallery"):
+        for menu in ("stats", "gallery"):
             with self.subTest(menu=menu):
                 text, keyboard = load_menu(menu)
 
@@ -238,7 +238,6 @@ class MenuHandlersTests(unittest.IsolatedAsyncioTestCase):
 
         actions = {
             "mini:profile:stats": "Характеристики",
-            "mini:profile:collection": "Коллекция",
             "mini:profile:gallery": "Галерея",
         }
 

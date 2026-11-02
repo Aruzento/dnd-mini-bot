@@ -126,10 +126,21 @@ def load_menu(
         raise ValueError("Некорректные динамические кнопки")
 
     rows = []
+    active_columns = columns
 
     for entry in buttons:
         if not isinstance(entry, dict):
             raise ValueError(f"Некорректная кнопка меню: {name}")
+
+        row_columns = entry.get("row_columns", columns)
+
+        if (
+            type(row_columns) is not int
+            or not 1 <= row_columns <= 8
+        ):
+            raise ValueError(
+                f"Некорректное число колонок: {name}"
+            )
 
         # Условие отображения кнопки.
         condition = entry.get("when")
@@ -164,6 +175,15 @@ def load_menu(
         else:
             current_buttons = [entry]
 
+        if (
+            rows
+            and rows[-1]
+            and row_columns != active_columns
+        ):
+            rows.append([])
+
+        active_columns = row_columns
+
         for button in current_buttons:
             if not isinstance(button, dict):
                 raise ValueError(f"Некорректная кнопка: {name}")
@@ -187,7 +207,7 @@ def load_menu(
             if not 1 <= len(action.encode("utf-8")) <= 64:
                 raise ValueError(f"Invalid callback size: {name}")
 
-            if not rows or len(rows[-1]) == columns:
+            if not rows or len(rows[-1]) == active_columns:
                 rows.append([])
 
             rows[-1].append(

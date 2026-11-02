@@ -1,9 +1,30 @@
 
 {
-  "text": "Коллекция\n\nВ разработке.",
+  "text": "Коллекция: {owned} / {total}\n\nВыбери редкость:",
+  "columns": 2,
   "buttons": [
     {
-      "text": "◀ Профиль",
+      "text": "Обычный",
+      "callback_data": "mini:collection:list:common:1"
+    },
+    {
+      "text": "Редкий",
+      "callback_data": "mini:collection:list:rare:1"
+    },
+    {
+      "text": "Легендарный",
+      "callback_data": "mini:collection:list:legendary:1"
+    },
+    {
+      "text": "Мифический",
+      "callback_data": "mini:collection:list:mythic:1"
+    },
+    {
+      "text": "Главная",
+      "callback_data": "mini:main"
+    },
+    {
+      "text": "Назад",
       "callback_data": "mini:profile"
     }
   ]

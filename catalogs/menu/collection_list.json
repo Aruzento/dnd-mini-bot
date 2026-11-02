@@ -1,0 +1,35 @@
+
+{
+  "text": "{rarity_name}\n\n{characters_text}\n\nВыбери персонажа, чтобы посмотреть подробнее:",
+  "columns": 2,
+  "buttons": [
+    {
+      "dynamic": "characters"
+    },
+    {
+      "text": "<",
+      "callback_data": "mini:collection:list:{rarity}:{prev_page}",
+      "when": "has_prev",
+      "row_columns": 3
+    },
+    {
+      "text": "{page} / {total_pages}",
+      "callback_data": "mini:collection:list:{rarity}:{page}",
+      "row_columns": 3
+    },
+    {
+      "text": ">",
+      "callback_data": "mini:collection:list:{rarity}:{next_page}",
+      "when": "has_next",
+      "row_columns": 3
+    },
+    {
+      "text": "Главная",
+      "callback_data": "mini:main"
+    },
+    {
+      "text": "Назад",
+      "callback_data": "mini:profile:collection"
+    }
+  ]
+}

@@ -17,9 +17,7 @@ router = Router(name="mini_profile")
 
 PROFILE_MENUS = {
     "mini:profile": "profile",
-    "mini:profile:party": "party",
     "mini:profile:stats": "stats",
-    "mini:profile:collection": "collection",
     "mini:profile:gallery": "gallery",
 }
 

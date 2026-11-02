@@ -1,0 +1,15 @@
+
+{
+  "text": "{name}\n\nРедкость: {rarity_name}\nСлот: {slot_name}\nСтатус: {status}\n\nХарактеристики: {stats}\n\nПассивки:\n{passives}\n\nРабота в деревне: {village}\nПолучение: {obtain}",
+  "columns": 2,
+  "buttons": [
+    {
+      "text": "Назад",
+      "callback_data": "mini:collection:list:{rarity}:{page}"
+    },
+    {
+      "text": "Главная",
+      "callback_data": "mini:main"
+    }
+  ]
+}
