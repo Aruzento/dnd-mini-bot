@@ -17,16 +17,15 @@ from src.mainplayer.storage import (
 
 class MainPlayerTests(unittest.TestCase):
 
-    
     def test_class_hp_modifiers(self):
-        modifiers = {
-            "fighter": 10,
-            "rogue": 8,
-            "wizard": 6,
-            "bard": 8,
+        expected_hp = {
+            "fighter": 28,
+            "rogue": 23,
+            "wizard": 18,
+            "bard": 23,
         }
 
-        for class_id, modifier in modifiers.items():
+        for class_id, expected in expected_hp.items():
             with self.subTest(class_id=class_id):
                 player = MainPlayer(
                     id=123,
@@ -36,11 +35,7 @@ class MainPlayerTests(unittest.TestCase):
                     passives=["lvl1up"],
                 )
 
-                # lvl1up даёт +1 к телосложению.
-                self.assertEqual(
-                    player.hp_max,
-                    modifier + 4,
-                )
+                self.assertEqual(player.hp_max, expected)
 
     def test_hp_recalculates_after_stat_change(self):
         create_player(123, "Тест", self.db_path)
@@ -52,7 +47,7 @@ class MainPlayerTests(unittest.TestCase):
         player = get_player(123, self.db_path)
 
         # Базовое CON = 0, пассивка lvl1up даёт +1.
-        self.assertEqual(player.hp_max, 7)
+        self.assertEqual(player.hp_max, 6)
         self.assertEqual(player.current_hp, 7)
 
         # Изменяем базовое телосложение на 10.
@@ -64,7 +59,7 @@ class MainPlayerTests(unittest.TestCase):
 
         # CON = 10 + 1 от lvl1up.
         self.assertEqual(player.effective_stats["constitution"], 11)
-        self.assertEqual(player.hp_max, 17)
+        self.assertEqual(player.hp_max, 11)
         self.assertEqual(player.current_hp, 17)
 
         # Сохраняем фактическое здоровье после урона.
@@ -77,7 +72,7 @@ class MainPlayerTests(unittest.TestCase):
 
         player = get_player(123, self.db_path)
 
-        self.assertEqual(player.hp_max, 19)
+        self.assertEqual(player.hp_max, 12)
         self.assertEqual(player.current_hp, 9)
 
     def test_tiefling_wizard_starting_hp(self):
@@ -90,8 +85,8 @@ class MainPlayerTests(unittest.TestCase):
         self.assertEqual(
             player.effective_stats["constitution"], 1
         )
-        self.assertEqual(player.hp_max, 7)
-        self.assertEqual(player.current_hp, 7)
+        self.assertEqual(player.hp_max, 6)
+        self.assertEqual(player.current_hp, 6)
 
     def test_hp_persistence(self):
         create_player(123, "Ренкай", self.db_path)
@@ -100,9 +95,9 @@ class MainPlayerTests(unittest.TestCase):
             123, "elf", "fighter", self.db_path
         )
 
-        self.assertEqual(player.hp_max, 12)
+        self.assertEqual(player.hp_max, 11)
         self.assertIsNone(player.hp_now)
-        self.assertEqual(player.current_hp, 12)
+        self.assertEqual(player.current_hp, 11)
 
         # Герой получил 5 единиц урона.
         self.assertTrue(
@@ -113,7 +108,7 @@ class MainPlayerTests(unittest.TestCase):
 
         self.assertEqual(player.hp_now, 7)
         self.assertEqual(player.current_hp, 7)
-        self.assertEqual(player.hp_max, 12)
+        self.assertEqual(player.hp_max, 11)
 
         # Нулевое HP тоже должно сохраняться.
         self.assertTrue(

@@ -7,6 +7,12 @@ from .attributes import (
     calculate_stats,
     default_stats,
 )
+from src.mechanics.modifiers import (
+    ability_modifier,
+    ability_score,
+    proficiency_bonus as get_proficiency_bonus,
+    initiative_bonus as get_initiative_bonus,
+)
 
 @dataclass
 class MainPlayer:
@@ -31,12 +37,46 @@ class MainPlayer:
 
         return result
 
+
+    @property
+    def ability_scores(self) -> dict[str, int]:
+        """Значения характеристик по принятой шкале D&D."""
+
+        return {
+            ability: ability_score(points)
+            for ability, points in self.effective_stats.items()
+        }
+
+    @property
+    def ability_modifiers(self) -> dict[str, int]:
+        """Модификаторы шести характеристик D&D."""
+
+        return {
+            ability: ability_modifier(score)
+            for ability, score in self.ability_scores.items()
+        }
+
+    @property
+    def proficiency_bonus(self) -> int:
+        """Мастерство зависит от уровня главного героя."""
+
+        return get_proficiency_bonus(self.level)
+
+    @property
+    def initiative_bonus(self) -> int:
+        """Бонус к броску инициативы."""
+
+        return get_initiative_bonus(
+            self.ability_modifiers["dexterity"]
+        )
+
+
     def max_hp(self, class_modifier: int) -> int:
         """Вычисляет максимальное здоровье героя."""
 
         return calculate_max_hp(
             level=self.level,
-            constitution=self.effective_stats["constitution"],
+            constitution=self.ability_modifiers["constitution"],
             class_modifier=class_modifier,
         )
 
@@ -44,7 +84,7 @@ class MainPlayer:
         """Вычисляет защиту героя."""
 
         return calculate_defense(
-            dexterity=self.effective_stats["dexterity"],
+            dexterity=self.ability_modifiers["dexterity"],
             character_bonus=character_bonus,
         )
 

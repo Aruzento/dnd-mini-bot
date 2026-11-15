@@ -134,8 +134,8 @@ class AttributesTests(unittest.TestCase):
     
     def test_hp_and_defense_formulas(self):
         self.assertEqual(
-            calculate_max_hp(4, 2, 5),
-            13,
+            calculate_max_hp(4, 2, 10),
+            36,
         )
 
         self.assertEqual(
@@ -169,21 +169,21 @@ class AttributesTests(unittest.TestCase):
             3,
         )
 
-        self.assertEqual(player.max_hp(5), 13)
-        self.assertEqual(player.defense(2), 15)
+        self.assertEqual(player.max_hp(10), 32)
+        self.assertEqual(player.defense(2), 13)
 
         # Удаление пассивки изменяет итоговые значения.
         player.passives.remove("fighter_passive")
 
-        self.assertEqual(player.max_hp(5), 9)
-        self.assertEqual(player.defense(2), 15)
+        self.assertEqual(player.max_hp(10), 28)
+        self.assertEqual(player.defense(2), 13)
 
         # Исходные характеристики не изменяются.
         self.assertEqual(player.stats["constitution"], 0)
 
     def test_invalid_combat_parameters(self):
         with self.assertRaises(ValueError):
-            calculate_max_hp(0, 2, 5)
+            calculate_max_hp(0, 2, 10)
 
         with self.assertRaises(ValueError):
             calculate_max_hp(4, 2, True)

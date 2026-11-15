@@ -296,7 +296,7 @@ class PartyTests(unittest.TestCase):
 
         self.assertEqual(
             get_player(123, self.db).hp_max,
-            7,
+            6,
         )
 
         equip_character(123, "aoe", "arza_zenta", self.db)
@@ -306,7 +306,7 @@ class PartyTests(unittest.TestCase):
         self.assertEqual(player.effective_stats["intelligence"], 5)
         self.assertEqual(player.effective_stats["charisma"], 6)
         self.assertEqual(player.effective_stats["constitution"], 2)
-        self.assertEqual(player.hp_max, 8)
+        self.assertEqual(player.hp_max, 7)
         self.assertEqual(
             player.party_passives,
             ["mischief", "fire_projectile"],

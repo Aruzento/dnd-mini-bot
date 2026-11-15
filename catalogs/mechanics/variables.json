@@ -1,0 +1,63 @@
+
+{
+  "STR": {
+    "target": "stats.strength",
+    "label": "Сила",
+    "kind": "ability"
+  },
+  "DEX": {
+    "target": "stats.dexterity",
+    "label": "Ловкость",
+    "kind": "ability"
+  },
+  "CON": {
+    "target": "stats.constitution",
+    "label": "Телосложение",
+    "kind": "ability"
+  },
+  "INT": {
+    "target": "stats.intelligence",
+    "label": "Интеллект",
+    "kind": "ability"
+  },
+  "WIS": {
+    "target": "stats.wisdom",
+    "label": "Мудрость",
+    "kind": "ability"
+  },
+  "CHA": {
+    "target": "stats.charisma",
+    "label": "Харизма",
+    "kind": "ability"
+  },
+  "HP": {
+    "target": "hp.max",
+    "label": "Максимальное HP",
+    "kind": "derived"
+  },
+  "AC": {
+    "target": "defense.ac",
+    "label": "Защита",
+    "kind": "derived"
+  },
+  "PROF": {
+    "target": "proficiency.bonus",
+    "label": "Бонус мастерства",
+    "kind": "derived"
+  },
+  "INIT": {
+    "target": "initiative.bonus",
+    "label": "Инициатива",
+    "kind": "bonus"
+  },
+  "HIT": {
+    "target": "attack.hit_bonus",
+    "label": "Попадание",
+    "kind": "bonus"
+  },
+  "DMG": {
+    "target": "attack.damage_bonus",
+    "label": "Урон",
+    "kind": "bonus"
+  }
+}
